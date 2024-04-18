@@ -1,0 +1,208 @@
+---
+title: "Proyecto Analisis de Datos European Soccer 2018"
+output: html_notebook
+---
+#Carga de librerias (Instalar si es necesario)
+library("DBI")
+library("RODBC")
+library("odbc")
+library("RPostgres")
+library("dplyr")
+library("dbplyr")
+library(ggplot2)
+library(tidyr)
+
+#Conexion con base de datos
+con <- dbConnect(
+    RPostgres::Postgres(),
+    dbname="european-soccer",
+    host="34.16.139.222",
+    port = 5432,
+    user = "postgres", 
+    password = "password");
+
+#Asignacion de tablas
+tablas <- dbListTables(con);
+
+#Carga de datos en la tabla en los datasets
+datasets <- lapply(tablas, function(tabla) {
+  query <- paste("SELECT * FROM", gsub(' ','',paste(paste('"',tabla),'"')))
+  dbGetQuery(con, query)
+})
+
+names(datasets) <- tablas
+
+# Verificando datasets
+lapply(datasets,head);
+# Verificando valores faltantes (Valores nulos)
+lapply(datasets, function(x) sum(is.na(x)))
+# Explorando estructura de tablas
+lapply(datasets, str)
+
+
+
+matches <- datasets$Match;
+teams <- datasets$team;
+countries <- datasets$country;
+leagues <- datasets$league;
+players <- datasets$player;
+player_attributes <- datasets$player_attributes;
+team_attributes <- datasets$team_attributes;
+
+#Observar columnas de cada dataset
+colnames(matches);
+colnames(teams);
+colnames(countries);
+colnames(leagues);
+colnames(players);
+colnames(player_attributes);
+colnames(team_attributes);
+
+# Visualizar las primeras filas de cada dataset
+head(matches)
+head(teams)
+head(countries)
+head(leagues)
+head(players)
+head(player_attributes)
+head(team_attributes)
+
+# Resumen estadístico de los datasets
+summary(matches)
+summary(teams)
+summary(countries)
+summary(leagues)
+summary(players)
+summary(player_attributes)
+summary(team_attributes)
+
+# Comprobar dimensiones de los datasets
+dim(matches)
+dim(teams)
+dim(countries)
+dim(leagues)
+dim(players)
+dim(player_attributes)
+dim(team_attributes)
+
+dbDisconnect(con)
+
+# Hallazgo 1: 10 Equipos locales con más victorias
+
+local_wins <- matches %>%
+  filter(home_team_goal > away_team_goal) %>%
+  group_by(home_team_api_id) %>%
+  summarise(total_wins = n()) %>%
+  arrange(desc(total_wins)) %>%
+  top_n(10) %>%
+  left_join(teams, by = c("home_team_api_id" = "team_api_id"))
+
+print(local_wins);
+
+# Hallazgo 2: 10 equipos visitantes con más victorias:
+
+away_wins <- matches %>%
+  filter(away_team_goal > home_team_goal) %>%
+  group_by(away_team_api_id) %>%
+  summarise(total_wins = n()) %>%
+  arrange(desc(total_wins)) %>%
+  top_n(10) %>%
+  left_join(teams, by = c("away_team_api_id" = "team_api_id"))
+
+print(away_wins);
+
+# Hallazgo 3: El jugador con la puntuación más alta
+
+highest_rating <- player_attributes %>%
+  filter(overall_rating == max(overall_rating, na.rm = TRUE)) %>%
+  left_join(players, by = c("player_api_id" = "player_api_id"))
+
+print(highest_rating);
+
+# Hallazgo 4: El jugador con la puntuación más baja
+lowest_rating <- player_attributes %>%
+  filter(overall_rating == min(overall_rating, na.rm = TRUE)) %>%
+  left_join(players, by = c("player_api_id" = "player_api_id"))
+
+print(lowest_rating);
+
+# Hallazgo 5: El equipo con mayor diferencia de goles a favor en casa:
+
+home_goal_diff <- matches %>%
+  group_by(home_team_api_id) %>%
+  summarise(total_goal_diff = sum(home_team_goal - away_team_goal)) %>%
+  arrange(desc(total_goal_diff)) %>%
+  top_n(1) %>%
+  left_join(teams, by = c("home_team_api_id" = "team_api_id"))
+
+print(home_goal_diff);
+
+# Hallazgo 6: El equipo con mayor diferencia de goels en contra como visitante:
+
+away_goal_diff <- matches %>%
+  group_by(away_team_api_id) %>%
+  summarise(total_goal_diff = sum(away_team_goal - home_team_goal)) %>%
+  arrange(desc(total_goal_diff)) %>%
+  top_n(1) %>%
+  left_join(teams, by = c("away_team_api_id" = "team_api_id"))
+
+# Muestra los resultados
+print(away_goal_diff);
+
+# Hallazgo 7: El equipo con la mayor cantidad de partidos en la base de datos:
+
+team_matches <- matches %>%
+  group_by(home_team_api_id) %>%
+  summarise(total_matches = n()) %>%
+  arrange(desc(total_matches)) %>%
+  top_n(1) %>%
+  left_join(teams, by = c("home_team_api_id" = "team_api_id"))
+
+print(team_matches);
+
+# Hallazgo 8: El equipo con la menor cantidad de derrotas como visitante:
+
+away_losses <- matches %>%
+  filter(away_team_goal > home_team_goal) %>%
+  group_by(away_team_api_id) %>%
+  summarise(total_losses = n()) %>%
+  arrange(total_losses) %>%
+  top_n(1) %>%
+  left_join(teams, by = c("away_team_api_id" = "team_api_id"))
+
+print(away_losses);
+
+# Hallazgo 9: Los 10 jugadores con la mayor cantidad de goles marcados en la temporada:
+
+player_goals <- matches %>%
+  select(home_player_1:away_player_11) %>%
+  gather(player, player_api_id) %>%
+  left_join(players, by = c("player_api_id" = "player_api_id")) %>%
+  group_by(player_name) %>%
+  summarise(total_goals = sum(!is.na(player))) %>%
+  arrange(desc(total_goals)) %>%
+  top_n(10)
+
+print(player_goals);
+
+# Hallazgo 10: Los 10 equipos con la mayor cantidad de partidos jugados en la temporada:
+
+team_matches_played <- matches %>%
+  group_by(home_team_api_id) %>%
+  summarise(total_matches = n()) %>%
+  bind_rows(matches %>%
+              group_by(away_team_api_id) %>%
+              summarise(total_matches = n())) %>%
+  group_by(home_team_api_id) %>%
+  summarise(total_matches = sum(total_matches)) %>%
+  arrange(desc(total_matches)) %>%
+  top_n(10) %>%
+  left_join(teams, by = c("home_team_api_id" = "team_api_id"))
+
+print(team_matches_played);
+
+
+
+
+
+
