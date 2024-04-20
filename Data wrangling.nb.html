@@ -1753,145 +1753,654 @@ display: none;
 
 
 <!-- rnb-text-begin -->
-<p>#Carga de librerias (Instalar si es necesario) library(“DBI”)
-library(“RODBC”) library(“odbc”) library(“RPostgres”) library(“dplyr”)
-library(“dbplyr”) library(ggplot2) library(tidyr)</p>
-<p>#Conexion con base de datos con &lt;- dbConnect(
-RPostgres::Postgres(), dbname=“european-soccer”, host=“34.16.139.222”,
-port = 5432, user = “postgres”, password = “password”);</p>
-<p>#Asignacion de tablas tablas &lt;- dbListTables(con);</p>
-<p>#Carga de datos en la tabla en los datasets datasets &lt;-
-lapply(tablas, function(tabla) { query &lt;- paste(“SELECT * FROM”,
-gsub(’ ‘,’‘,paste(paste(’“‘,tabla),’”’))) dbGetQuery(con, query) })</p>
-<p>names(datasets) &lt;- tablas</p>
-<div id="verificando-datasets" class="section level1">
-<h1>Verificando datasets</h1>
-<p>lapply(datasets,head); # Verificando valores faltantes (Valores
-nulos) lapply(datasets, function(x) sum(is.na(x))) # Explorando
-estructura de tablas lapply(datasets, str)</p>
-<p>matches &lt;- datasets<span class="math inline">\(Match; teams &lt;-
-datasets\)</span>team; countries &lt;- datasets<span class="math inline">\(country; leagues &lt;- datasets\)</span>league;
-players &lt;- datasets<span class="math inline">\(player;
-player_attributes &lt;- datasets\)</span>player_attributes;
-team_attributes &lt;- datasets$team_attributes;</p>
-<p>#Observar columnas de cada dataset colnames(matches);
-colnames(teams); colnames(countries); colnames(leagues);
-colnames(players); colnames(player_attributes);
-colnames(team_attributes);</p>
+<div id="carga-de-librerias" class="section level1">
+<h1>Carga de librerias</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaWYgKCFhbnkoLnBhY2thZ2VzKGFsbC5hdmFpbGFibGUgPSBUKSA9PSAnREJJJykpICAgICBpbnN0YWxsLnBhY2thZ2VzKCdEQkknLCBkZXBlbmRlbmNpZXMgPSBUKSAgICAgXG5pZiAoIWFueSgucGFja2FnZXMoYWxsLmF2YWlsYWJsZSA9IFQpID09ICdST0RCQycpKSAgICAgIGluc3RhbGwucGFja2FnZXMoJ1JPREJDJywgZGVwZW5kZW5jaWVzID0gVCkgICAgICBcbmlmICghYW55KC5wYWNrYWdlcyhhbGwuYXZhaWxhYmxlID0gVCkgPT0gJ29kYmMnKSkgICAgaW5zdGFsbC5wYWNrYWdlcygnb2RiYycsIGRlcGVuZGVuY2llcyA9IFQpICAgIFxuaWYgKCFhbnkoLnBhY2thZ2VzKGFsbC5hdmFpbGFibGUgPSBUKSA9PSAnUlBvc3RncmVzJykpICAgICBpbnN0YWxsLnBhY2thZ2VzKCdSUG9zdGdyZXMnLCBkZXBlbmRlbmNpZXMgPSBUKSAgIFxuaWYgKCFhbnkoLnBhY2thZ2VzKGFsbC5hdmFpbGFibGUgPSBUKSA9PSAnZHBseXInKSkgICAgICBpbnN0YWxsLnBhY2thZ2VzKCdkcGx5cicsIGRlcGVuZGVuY2llcyA9IFQpICAgICBcbmlmICghYW55KC5wYWNrYWdlcyhhbGwuYXZhaWxhYmxlID0gVCkgPT0gJ2RicGx5cicpKSBpbnN0YWxsLnBhY2thZ2VzKCdkYnBseXInLCBkZXBlbmRlbmNpZXMgPSBUKVxuaWYgKCFhbnkoLnBhY2thZ2VzKGFsbC5hdmFpbGFibGUgPSBUKSA9PSAnZ2dwbG90MicpKSAgaW5zdGFsbC5wYWNrYWdlcygnZ2dwbG90MicsIGRlcGVuZGVuY2llcyA9IFQpXG5pZiAoIWFueSgucGFja2FnZXMoYWxsLmF2YWlsYWJsZSA9IFQpID09ICd0aWR5cicpKSAgaW5zdGFsbC5wYWNrYWdlcygndGlkeXInLCBkZXBlbmRlbmNpZXMgPSBUKVxuaWYgKCFhbnkoLnBhY2thZ2VzKGFsbC5hdmFpbGFibGUgPSBUKSA9PSAnZ2dwdWJyJykpICBpbnN0YWxsLnBhY2thZ2VzKCdnZ3B1YnInLCBkZXBlbmRlbmNpZXMgPSBUKVxuaWYgKCFhbnkoLnBhY2thZ2VzKGFsbC5hdmFpbGFibGUgPSBUKSA9PSAnZ2dmb3J0aWZ5JykpICBpbnN0YWxsLnBhY2thZ2VzKCdnZ2ZvcnRpZnknLCBkZXBlbmRlbmNpZXMgPSBUKVxuXG5saWJyYXJ5KFwiREJJXCIpXG5saWJyYXJ5KFwiUk9EQkNcIilcbmxpYnJhcnkoXCJvZGJjXCIpXG5saWJyYXJ5KFwiUlBvc3RncmVzXCIpXG5saWJyYXJ5KFwiZHBseXJcIilcbmxpYnJhcnkoXCJkYnBseXJcIilcbmxpYnJhcnkoJ2dncGxvdDInKVxubGlicmFyeSgndGlkeXInKVxubGlicmFyeSgnZ2dwdWJyJylcbmxpYnJhcnkoJ2dnZm9ydGlmeScpXG5gYGAifQ== -->
+<pre class="r"><code>if (!any(.packages(all.available = T) == &#39;DBI&#39;))     install.packages(&#39;DBI&#39;, dependencies = T)     
+if (!any(.packages(all.available = T) == &#39;RODBC&#39;))      install.packages(&#39;RODBC&#39;, dependencies = T)      
+if (!any(.packages(all.available = T) == &#39;odbc&#39;))    install.packages(&#39;odbc&#39;, dependencies = T)    
+if (!any(.packages(all.available = T) == &#39;RPostgres&#39;))     install.packages(&#39;RPostgres&#39;, dependencies = T)   
+if (!any(.packages(all.available = T) == &#39;dplyr&#39;))      install.packages(&#39;dplyr&#39;, dependencies = T)     
+if (!any(.packages(all.available = T) == &#39;dbplyr&#39;)) install.packages(&#39;dbplyr&#39;, dependencies = T)
+if (!any(.packages(all.available = T) == &#39;ggplot2&#39;))  install.packages(&#39;ggplot2&#39;, dependencies = T)
+if (!any(.packages(all.available = T) == &#39;tidyr&#39;))  install.packages(&#39;tidyr&#39;, dependencies = T)
+if (!any(.packages(all.available = T) == &#39;ggpubr&#39;))  install.packages(&#39;ggpubr&#39;, dependencies = T)
+if (!any(.packages(all.available = T) == &#39;ggfortify&#39;))  install.packages(&#39;ggfortify&#39;, dependencies = T)
+
+library(&quot;DBI&quot;)
+library(&quot;RODBC&quot;)
+library(&quot;odbc&quot;)
+library(&quot;RPostgres&quot;)
+library(&quot;dplyr&quot;)
+library(&quot;dbplyr&quot;)
+library(&#39;ggplot2&#39;)
+library(&#39;tidyr&#39;)
+library(&#39;ggpubr&#39;)
+library(&#39;ggfortify&#39;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
-<div id="visualizar-las-primeras-filas-de-cada-dataset" class="section level1">
-<h1>Visualizar las primeras filas de cada dataset</h1>
-<p>head(matches) head(teams) head(countries) head(leagues) head(players)
-head(player_attributes) head(team_attributes)</p>
+<div id="carga-de-datos" class="section level1">
+<h1>Carga de datos</h1>
+<div id="conexion-con-base-de-datos" class="section level2">
+<h2>Conexion con base de datos</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIGNvbiA8LSBkYkNvbm5lY3QoXG4gICAgIFJQb3N0Z3Jlczo6UG9zdGdyZXMoKSxcbiAgICAgZGJuYW1lPVwiZXVyb3BlYW4tc29jY2VyXCIsXG4gICAgIGhvc3Q9XCIzNC4xNi4xMzkuMjIyXCIsXG4gICAgIHBvcnQgPSA1NDMyLFxuICAgICB1c2VyID0gXCJwb3N0Z3Jlc1wiLCBcbiAgICAgcGFzc3dvcmQgPSBcInBhc3N3b3JkXCIpXG5gYGAifQ== -->
+<pre class="r"><code> con &lt;- dbConnect(
+     RPostgres::Postgres(),
+     dbname=&quot;european-soccer&quot;,
+     host=&quot;34.16.139.222&quot;,
+     port = 5432,
+     user = &quot;postgres&quot;, 
+     password = &quot;password&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="asignacion-de-tablas" class="section level2">
+<h2>Asignacion de tablas</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudGFibGFzIDwtIGRiTGlzdFRhYmxlcyhjb24pXG5gYGAifQ== -->
+<pre class="r"><code>tablas &lt;- dbListTables(con)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="carga-de-datos-en-la-tabla-en-los-datasets" class="section level2">
+<h2>Carga de datos en la tabla en los datasets</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIGRhdGFzZXRzIDwtIGxhcHBseSh0YWJsYXMsIGZ1bmN0aW9uKHRhYmxhKSB7XG4gICBxdWVyeSA8LSBwYXN0ZShcIlNFTEVDVCAqIEZST01cIiwgZ3N1YignICcsJycscGFzdGUocGFzdGUoJ1wiJyx0YWJsYSksJ1wiJykpKVxuICAgZGJHZXRRdWVyeShjb24sIHF1ZXJ5KVxuIH0pXG4gbmFtZXMoZGF0YXNldHMpIDwtIHRhYmxhc1xuYGBgIn0= -->
+<pre class="r"><code> datasets &lt;- lapply(tablas, function(tabla) {
+   query &lt;- paste(&quot;SELECT * FROM&quot;, gsub(&#39; &#39;,&#39;&#39;,paste(paste(&#39;&quot;&#39;,tabla),&#39;&quot;&#39;)))
+   dbGetQuery(con, query)
+ })
+ names(datasets) &lt;- tablas</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="verificando-datasets" class="section level2">
+<h2>Verificando datasets</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGFwcGx5KGRhdGFzZXRzLGhlYWQpXG5gYGAifQ== -->
+<pre class="r"><code>lapply(datasets,head)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="verificando-valores-faltantes-valores-nulos" class="section level2">
+<h2>Verificando valores faltantes (Valores nulos)</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGFwcGx5KGRhdGFzZXRzLCBmdW5jdGlvbih4KSBzdW0oaXMubmEoeCkpKVxuYGBgIn0= -->
+<pre class="r"><code>lapply(datasets, function(x) sum(is.na(x)))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="explorando-estructura-de-tablas" class="section level2">
+<h2>Explorando estructura de tablas</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGFwcGx5KGRhdGFzZXRzLCBzdHIpXG5cbm1hdGNoZXMgPC0gZGF0YXNldHMkTWF0Y2hcbnRlYW1zIDwtIGRhdGFzZXRzJHRlYW1cbmNvdW50cmllcyA8LSBkYXRhc2V0cyRjb3VudHJ5XG5sZWFndWVzIDwtIGRhdGFzZXRzJGxlYWd1ZVxucGxheWVycyA8LSBkYXRhc2V0cyRwbGF5ZXJcbnBsYXllcl9hdHRyaWJ1dGVzIDwtIGRhdGFzZXRzJHBsYXllcl9hdHRyaWJ1dGVzXG50ZWFtX2F0dHJpYnV0ZXMgPC0gZGF0YXNldHMkdGVhbV9hdHRyaWJ1dGVzXG5gYGAifQ== -->
+<pre class="r"><code>lapply(datasets, str)
+
+matches &lt;- datasets$Match
+teams &lt;- datasets$team
+countries &lt;- datasets$country
+leagues &lt;- datasets$league
+players &lt;- datasets$player
+player_attributes &lt;- datasets$player_attributes
+team_attributes &lt;- datasets$team_attributes</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="observar-columnas-de-cada-dataset" class="section level2">
+<h2>Observar columnas de cada dataset</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29sbmFtZXMobWF0Y2hlcylcbmNvbG5hbWVzKHRlYW1zKVxuY29sbmFtZXMoY291bnRyaWVzKVxuY29sbmFtZXMobGVhZ3VlcylcbmNvbG5hbWVzKHBsYXllcnMpXG5jb2xuYW1lcyhwbGF5ZXJfYXR0cmlidXRlcylcbmNvbG5hbWVzKHRlYW1fYXR0cmlidXRlcylcbmBgYCJ9 -->
+<pre class="r"><code>colnames(matches)
+colnames(teams)
+colnames(countries)
+colnames(leagues)
+colnames(players)
+colnames(player_attributes)
+colnames(team_attributes)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="visualizar-las-primeras-filas-de-cada-dataset" class="section level2">
+<h2>Visualizar las primeras filas de cada dataset</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaGVhZChtYXRjaGVzKVxuaGVhZCh0ZWFtcylcbmhlYWQoY291bnRyaWVzKVxuaGVhZChsZWFndWVzKVxuaGVhZChwbGF5ZXJzKVxuaGVhZChwbGF5ZXJfYXR0cmlidXRlcylcbmhlYWQodGVhbV9hdHRyaWJ1dGVzKVxuYGBgIn0= -->
+<pre class="r"><code>head(matches)
+head(teams)
+head(countries)
+head(leagues)
+head(players)
+head(player_attributes)
+head(team_attributes)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
 </div>
 <div id="resumen-estadístico-de-los-datasets" class="section level1">
 <h1>Resumen estadístico de los datasets</h1>
-<p>summary(matches) summary(teams) summary(countries) summary(leagues)
-summary(players) summary(player_attributes) summary(team_attributes)</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3VtbWFyeShtYXRjaGVzKVxuc3VtbWFyeSh0ZWFtcylcbnN1bW1hcnkoY291bnRyaWVzKVxuc3VtbWFyeShsZWFndWVzKVxuc3VtbWFyeShwbGF5ZXJzKVxuc3VtbWFyeShwbGF5ZXJfYXR0cmlidXRlcylcbnN1bW1hcnkodGVhbV9hdHRyaWJ1dGVzKVxuXG5gYGAifQ== -->
+<pre class="r"><code>summary(matches)
+summary(teams)
+summary(countries)
+summary(leagues)
+summary(players)
+summary(player_attributes)
+summary(team_attributes)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
 <div id="comprobar-dimensiones-de-los-datasets" class="section level1">
 <h1>Comprobar dimensiones de los datasets</h1>
-<p>dim(matches) dim(teams) dim(countries) dim(leagues) dim(players)
-dim(player_attributes) dim(team_attributes)</p>
-<p>dbDisconnect(con)</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGltKG1hdGNoZXMpXG5kaW0odGVhbXMpXG5kaW0oY291bnRyaWVzKVxuZGltKGxlYWd1ZXMpXG5kaW0ocGxheWVycylcbmRpbShwbGF5ZXJfYXR0cmlidXRlcylcbmRpbSh0ZWFtX2F0dHJpYnV0ZXMpXG5gYGAifQ== -->
+<pre class="r"><code>dim(matches)
+dim(teams)
+dim(countries)
+dim(leagues)
+dim(players)
+dim(player_attributes)
+dim(team_attributes)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="desconexión-de-db" class="section level1">
+<h1>Desconexión de DB</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGJEaXNjb25uZWN0KGNvbilcbmBgYCJ9 -->
+<pre class="r"><code>dbDisconnect(con)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<div id="section" class="section level20">
+<p class="heading"></p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubG9hZCgnZGF0b3MuUmRhdGEnKVxuYGBgIn0= -->
+<pre class="r"><code>load(&#39;datos.Rdata&#39;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="section-1" class="section level20">
+<p class="heading"></p>
+</div>
+</div>
+<div id="tabla-de-posiciones" class="section level1">
+<h1>Tabla de Posiciones</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG5sb2NhbF90ZWFtIDwtIG1hdGNoZXMgJT4lIFxuICAgICAgICAgIG11dGF0ZShcbiAgICAgICAgICAgIEdQID0gMSxcbiAgICAgICAgICAgIHRlYW1fYXBpX2lkID0gaG9tZV90ZWFtX2FwaV9pZCxcbiAgICAgICAgICAgIFcgPSBob21lX3RlYW1fZ29hbCA+IGF3YXlfdGVhbV9nb2FsLFxuICAgICAgICAgICAgRCA9IGhvbWVfdGVhbV9nb2FsID09IGF3YXlfdGVhbV9nb2FsLFxuICAgICAgICAgICAgTCA9IGhvbWVfdGVhbV9nb2FsIDwgYXdheV90ZWFtX2dvYWwsXG4gICAgICAgICAgICBHRiA9IGhvbWVfdGVhbV9nb2FsLFxuICAgICAgICAgICAgR0EgPSBhd2F5X3RlYW1fZ29hbFxuICAgICAgICAgICkgJT4lIFxuICAgICAgICAgIGdyb3VwX2J5KHNlYXNvbiwgbGVhZ3VlX2lkLCB0ZWFtX2FwaV9pZCkgJT4lXG4gICAgICAgICAgc3VtbWFyaXNlKFxuICAgICAgICAgICAgICBHUCA9IG4oKSxXID0gc3VtKFcpLCBEID0gc3VtKEQpLCBMID0gc3VtKEwpLCBHRiA9IHN1bShHRiksIEdBID0gc3VtKEdBKSkgJT4lXG4gICAgICAgICAgdW5ncm91cFxuXG5hd2F5X3RlYW0gPC0gbWF0Y2hlcyAlPiUgXG4gICAgICAgICAgbXV0YXRlKFxuICAgICAgICAgICAgR1AgPSAxLFxuICAgICAgICAgICAgdGVhbV9hcGlfaWQgPSBhd2F5X3RlYW1fYXBpX2lkLFxuICAgICAgICAgICAgVyA9IGhvbWVfdGVhbV9nb2FsIDwgYXdheV90ZWFtX2dvYWwsXG4gICAgICAgICAgICBEID0gaG9tZV90ZWFtX2dvYWwgPT0gYXdheV90ZWFtX2dvYWwsXG4gICAgICAgICAgICBMID0gaG9tZV90ZWFtX2dvYWwgPiBhd2F5X3RlYW1fZ29hbCxcbiAgICAgICAgICAgIEdGID0gYXdheV90ZWFtX2dvYWwsXG4gICAgICAgICAgICBHQSA9IGhvbWVfdGVhbV9nb2FsXG4gICAgICAgICAgKSAlPiUgXG4gICAgICAgICAgZ3JvdXBfYnkoc2Vhc29uLCBsZWFndWVfaWQsIHRlYW1fYXBpX2lkKSAlPiVcbiAgICAgICAgICBzdW1tYXJpc2UoICAgICAgICAgICAgXG4gICAgICAgICAgICBHUCA9IG4oKSxXID0gc3VtKFcpLCBEID0gc3VtKEQpLCBMID0gc3VtKEwpLCBHRiA9IHN1bShHRiksIEdBID0gc3VtKEdBKSkgJT4lXG4gICAgICAgICAgdW5ncm91cFxuXG5wb3NpdGlvbl90YWJsZSA8LSB1bmlvbihsb2NhbF90ZWFtLCBhd2F5X3RlYW0pICU+JVxuICAgICAgICAgIGdyb3VwX2J5KHNlYXNvbiwgbGVhZ3VlX2lkLCB0ZWFtX2FwaV9pZCkgJT4lXG4gICAgICAgICAgbXV0YXRlKEdEID0gR0YgLSBHQSwgUFRTID0gMypXICsgMSpEKSAlPiVcbiAgICAgICAgICBzdW1tYXJpc2UoICAgICAgICAgICAgXG4gICAgICAgICAgICBHUCA9IHN1bShHUCksVyA9IHN1bShXKSwgRCA9IHN1bShEKSwgTCA9IHN1bShMKSwgR0YgPSBzdW0oR0YpLCBHQSA9IHN1bShHQSksXG4gICAgICAgICAgICBHRCA9IHN1bShHRCksIFBUUyA9IHN1bShQVFMpKSAlPiVcbiAgYXJyYW5nZShkZXNjKFBUUykpICU+JSBcbiAgbGVmdF9qb2luKGxlYWd1ZXMsIGJ5ID0gYygnbGVhZ3VlX2lkJyA9ICdpZCcpKSAlPiVcbiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoJ3RlYW1fYXBpX2lkJykpICU+JSBcbiAgdW5ncm91cFxuXG5wcmludChwb3NpdGlvbl90YWJsZSlcbmBgYCJ9 -->
+<pre class="r"><code>
+local_team &lt;- matches %&gt;% 
+          mutate(
+            GP = 1,
+            team_api_id = home_team_api_id,
+            W = home_team_goal &gt; away_team_goal,
+            D = home_team_goal == away_team_goal,
+            L = home_team_goal &lt; away_team_goal,
+            GF = home_team_goal,
+            GA = away_team_goal
+          ) %&gt;% 
+          group_by(season, league_id, team_api_id) %&gt;%
+          summarise(
+              GP = n(),W = sum(W), D = sum(D), L = sum(L), GF = sum(GF), GA = sum(GA)) %&gt;%
+          ungroup
+
+away_team &lt;- matches %&gt;% 
+          mutate(
+            GP = 1,
+            team_api_id = away_team_api_id,
+            W = home_team_goal &lt; away_team_goal,
+            D = home_team_goal == away_team_goal,
+            L = home_team_goal &gt; away_team_goal,
+            GF = away_team_goal,
+            GA = home_team_goal
+          ) %&gt;% 
+          group_by(season, league_id, team_api_id) %&gt;%
+          summarise(            
+            GP = n(),W = sum(W), D = sum(D), L = sum(L), GF = sum(GF), GA = sum(GA)) %&gt;%
+          ungroup
+
+position_table &lt;- union(local_team, away_team) %&gt;%
+          group_by(season, league_id, team_api_id) %&gt;%
+          mutate(GD = GF - GA, PTS = 3*W + 1*D) %&gt;%
+          summarise(            
+            GP = sum(GP),W = sum(W), D = sum(D), L = sum(L), GF = sum(GF), GA = sum(GA),
+            GD = sum(GD), PTS = sum(PTS)) %&gt;%
+  arrange(desc(PTS)) %&gt;% 
+  left_join(leagues, by = c(&#39;league_id&#39; = &#39;id&#39;)) %&gt;%
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;% 
+  ungroup
+
+print(position_table)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="campeones-por-liga" class="section level1">
+<h1>Campeones por Liga</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2hhbXBpb25fc2Vhc29uIDwtIHBvc2l0aW9uX3RhYmxlICU+JVxuICAgICAgICAgICAgZ3JvdXBfYnkoc2Vhc29uLCBsZWFndWVfaWQpICU+JVxuICAgICAgICAgICAgZmlsdGVyKFBUUyA9PSBtYXgoUFRTKSkgJT4lXG4gICAgICAgICAgICBmaWx0ZXIoR0QgPT0gbWF4KEdEKSkgJT4lXG4gICAgICAgICAgICBhcnJhbmdlKGxlYWd1ZV9pZCwgc2Vhc29uKVxuXG5wcmludChjaGFtcGlvbl9zZWFzb24pXG5gYGAifQ== -->
+<pre class="r"><code>champion_season &lt;- position_table %&gt;%
+            group_by(season, league_id) %&gt;%
+            filter(PTS == max(PTS)) %&gt;%
+            filter(GD == max(GD)) %&gt;%
+            arrange(league_id, season)
+
+print(champion_season)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
 <div id="hallazgo-1-10-equipos-locales-con-más-victorias" class="section level1">
 <h1>Hallazgo 1: 10 Equipos locales con más victorias</h1>
-<p>local_wins &lt;- matches %&gt;% filter(home_team_goal &gt;
-away_team_goal) %&gt;% group_by(home_team_api_id) %&gt;%
-summarise(total_wins = n()) %&gt;% arrange(desc(total_wins)) %&gt;%
-top_n(10) %&gt;% left_join(teams, by = c(“home_team_api_id” =
-“team_api_id”))</p>
-<p>print(local_wins);</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG5sb2NhbF93aW5zIDwtIGxvY2FsX3RlYW0gJT4lIGdyb3VwX2J5KHRlYW1fYXBpX2lkKSAlPiVcbiAgc3VtbWFyaXNlKHRvdGFsX3dpbnMgPSBzdW0oVykpICU+JVxuICBhcnJhbmdlKGRlc2ModG90YWxfd2lucykpICU+JSBcbiAgdG9wX24oMTApICU+JVxuICBsZWZ0X2pvaW4odGVhbXMsIGJ5ID0gYygndGVhbV9hcGlfaWQnKSkgJT4lXG4gIG11dGF0ZShsYWJlbHMgPSBhcy5jaGFyYWN0ZXIodG90YWxfd2lucykpIFxuXG5wcmludChsb2NhbF93aW5zKVxuXG4jIyMjXG5sb2NhbF93aW5zX3NlYXNvbiA8LSBsb2NhbF90ZWFtICU+JSBcbiAgZ3JvdXBfYnkodGVhbV9hcGlfaWQsc2Vhc29uLCBsZWFndWVfaWQpICU+JVxuICBzdW1tYXJpc2UodG90YWxfd2lucyA9IHN1bShXKSkgJT4lIFxuICBsZWZ0X2pvaW4odGVhbXMsIGJ5ID0gYygndGVhbV9hcGlfaWQnKSkgJT4lIFxuICBtZXJnZShjaGFtcGlvbl9zZWFzb24gJT4lIHRyYW5zbXV0ZShzZWFzb24sIGxlYWd1ZV9pZCwgY2hhbXBpb24gPSB0ZWFtX2FwaV9pZCksIGJ5ID0gYygnc2Vhc29uJywnbGVhZ3VlX2lkJykpICU+JVxuICBtdXRhdGUoY2hhbXBpb24gPSB0ZWFtX2FwaV9pZCA9PSBjaGFtcGlvbilcblxub3JkZW4gPC0gbG9jYWxfd2lucyAlPiUgYXJyYW5nZSh0b3RhbF93aW5zKSAgXG5cbmdnYSA8LSBnZ3Bsb3QobG9jYWxfd2lucywgYWVzKHggPSB0b3RhbF93aW5zLCB5ID0gdGVhbV9sb25nX25hbWUpKSArXG4gIGdlb21fY29sKCkgK1xuICBnZW9tX3RleHQoYWVzKGxhYmVsID0gdG90YWxfd2lucyksIGhqdXN0ID0gMSwgbnVkZ2VfeCA9IC0wLjUsIGNvbG9yID0gJ3doaXRlJykgK1xuICBzY2FsZV95X2Rpc2NyZXRlKGxpbWl0cyA9IG9yZGVuJHRlYW1fbG9uZ19uYW1lKSArXG4gIHhsYWIoJ1BhcnRpZG9zIGdhbmFkb3MgY29tbyBsb2NhbCcpICtcbiAgeWxhYignRXF1aXBvJykgXG4gIFxuZ2diIDwtIGdncGxvdChsb2NhbF93aW5zX3NlYXNvbiwgYWVzKGdyb3VwID0gc2Vhc29uKSkgK1xuICBnZW9tX2NvbChhZXModG90YWxfd2lucywgdGVhbV9sb25nX25hbWUsICBmaWxsID0gY2hhbXBpb24pKSArXG4gIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICtcbiAgZmFjZXRfd3JhcCh+c2Vhc29uLCBzY2FsZXMgPSAnZnJlZScpICtcbiAgeGxhYignUGFydGlkb3MgZ2FuYWRvcyBjb21vIGxvY2FsZXMnKSArXG4gIHlsYWIoJ0VxdWlwbycpICsgXG4gIHRoZW1lKHRleHQ9ZWxlbWVudF90ZXh0KHNpemU9NykpICtcbiAgbGFicyhmaWxsID0gXCJDYW1wZcOzbiBkZSBMaWdhXCIpXG5cbnByaW50KGdnYSlcbnByaW50KGdnYilcblxuIyMjXG5gYGAifQ== -->
+<pre class="r"><code>
+local_wins &lt;- local_team %&gt;% group_by(team_api_id) %&gt;%
+  summarise(total_wins = sum(W)) %&gt;%
+  arrange(desc(total_wins)) %&gt;% 
+  top_n(10) %&gt;%
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;%
+  mutate(labels = as.character(total_wins)) 
+
+print(local_wins)
+
+####
+local_wins_season &lt;- local_team %&gt;% 
+  group_by(team_api_id,season, league_id) %&gt;%
+  summarise(total_wins = sum(W)) %&gt;% 
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;% 
+  merge(champion_season %&gt;% transmute(season, league_id, champion = team_api_id), by = c(&#39;season&#39;,&#39;league_id&#39;)) %&gt;%
+  mutate(champion = team_api_id == champion)
+
+orden &lt;- local_wins %&gt;% arrange(total_wins)  
+
+gga &lt;- ggplot(local_wins, aes(x = total_wins, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_wins), hjust = 1, nudge_x = -0.5, color = &#39;white&#39;) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab(&#39;Partidos ganados como local&#39;) +
+  ylab(&#39;Equipo&#39;) 
+  
+ggb &lt;- ggplot(local_wins_season, aes(group = season)) +
+  geom_col(aes(total_wins, team_long_name,  fill = champion)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = &#39;free&#39;) +
+  xlab(&#39;Partidos ganados como locales&#39;) +
+  ylab(&#39;Equipo&#39;) + 
+  theme(text=element_text(size=7)) +
+  labs(fill = &quot;Campeón de Liga&quot;)
+
+print(gga)
+print(ggb)
+
+###</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
 <div id="hallazgo-2-10-equipos-visitantes-con-más-victorias" class="section level1">
 <h1>Hallazgo 2: 10 equipos visitantes con más victorias:</h1>
-<p>away_wins &lt;- matches %&gt;% filter(away_team_goal &gt;
-home_team_goal) %&gt;% group_by(away_team_api_id) %&gt;%
-summarise(total_wins = n()) %&gt;% arrange(desc(total_wins)) %&gt;%
-top_n(10) %&gt;% left_join(teams, by = c(“away_team_api_id” =
-“team_api_id”))</p>
-<p>print(away_wins);</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYXdheV93aW5zIDwtIGF3YXlfdGVhbSAlPiUgZ3JvdXBfYnkodGVhbV9hcGlfaWQpICU+JVxuICBzdW1tYXJpc2UodG90YWxfd2lucyA9IHN1bShXKSkgJT4lXG4gIGFycmFuZ2UoZGVzYyh0b3RhbF93aW5zKSkgJT4lIFxuICB0b3BfbigxMCkgJT4lXG4gIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCd0ZWFtX2FwaV9pZCcpKSAlPiVcbiAgbXV0YXRlKGxhYmVscyA9IGFzLmNoYXJhY3Rlcih0b3RhbF93aW5zKSkgXG5cbnByaW50KGF3YXlfd2lucylcblxuIyMjI1xuYXdheV93aW5zX3NlYXNvbiA8LSBhd2F5X3RlYW0gJT4lIFxuICBncm91cF9ieSh0ZWFtX2FwaV9pZCxzZWFzb24sIGxlYWd1ZV9pZCkgJT4lXG4gIHN1bW1hcmlzZSh0b3RhbF93aW5zID0gc3VtKFcpKSAlPiUgXG4gIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCd0ZWFtX2FwaV9pZCcpKSAlPiUgXG4gIG1lcmdlKGNoYW1waW9uX3NlYXNvbiAlPiUgdHJhbnNtdXRlKHNlYXNvbiwgbGVhZ3VlX2lkLCBjaGFtcGlvbiA9IHRlYW1fYXBpX2lkKSwgYnkgPSBjKCdzZWFzb24nLCdsZWFndWVfaWQnKSkgJT4lXG4gIG11dGF0ZShjaGFtcGlvbiA9IHRlYW1fYXBpX2lkID09IGNoYW1waW9uKVxuXG5vcmRlbiA9IGF3YXlfd2lucyAlPiUgYXJyYW5nZSh0b3RhbF93aW5zKSAgXG5cbmdnYSA8LSBnZ3Bsb3QoYXdheV93aW5zLCBhZXMoeCA9IHRvdGFsX3dpbnMsIHkgPSB0ZWFtX2xvbmdfbmFtZSkpICtcbiAgZ2VvbV9jb2woKSArXG4gIGdlb21fdGV4dChhZXMobGFiZWwgPSB0b3RhbF93aW5zKSwgaGp1c3QgPSAxLCBudWRnZV94ID0gLTAuNSwgY29sb3IgPSAnd2hpdGUnKSArXG4gIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICtcbiAgeGxhYignUGFydGlkb3MgZ2FuYWRvcyBjb21vIGxvY2FsJykgK1xuICB5bGFiKCdFcXVpcG8nKSBcbiAgXG5nZ2IgPC0gZ2dwbG90KGF3YXlfd2luc19zZWFzb24sIGFlcyhncm91cCA9IHNlYXNvbiwgZmlsbCA9IGNoYW1waW9uKSkgK1xuICBnZW9tX2NvbChhZXModG90YWxfd2lucywgdGVhbV9sb25nX25hbWUpKSArXG4gIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICtcbiAgZmFjZXRfd3JhcCh+c2Vhc29uLCBzY2FsZXMgPSAnZnJlZScpICtcbiAgeGxhYignUGFydGlkb3MgZ2FuYWRvcyBjb21vIHZpc2l0YW50ZXMnKSArXG4gIHlsYWIoJ0VxdWlwbycpICsgXG4gIHRoZW1lKHRleHQ9ZWxlbWVudF90ZXh0KHNpemU9NykpICtcbiAgbGFicyhmaWxsID0gXCJDYW1wZcOzblwiKVxuXG5wcmludChnZ2EpXG5wcmludChnZ2IpXG5cbmBgYCJ9 -->
+<pre class="r"><code>away_wins &lt;- away_team %&gt;% group_by(team_api_id) %&gt;%
+  summarise(total_wins = sum(W)) %&gt;%
+  arrange(desc(total_wins)) %&gt;% 
+  top_n(10) %&gt;%
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;%
+  mutate(labels = as.character(total_wins)) 
+
+print(away_wins)
+
+####
+away_wins_season &lt;- away_team %&gt;% 
+  group_by(team_api_id,season, league_id) %&gt;%
+  summarise(total_wins = sum(W)) %&gt;% 
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;% 
+  merge(champion_season %&gt;% transmute(season, league_id, champion = team_api_id), by = c(&#39;season&#39;,&#39;league_id&#39;)) %&gt;%
+  mutate(champion = team_api_id == champion)
+
+orden = away_wins %&gt;% arrange(total_wins)  
+
+gga &lt;- ggplot(away_wins, aes(x = total_wins, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_wins), hjust = 1, nudge_x = -0.5, color = &#39;white&#39;) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab(&#39;Partidos ganados como local&#39;) +
+  ylab(&#39;Equipo&#39;) 
+  
+ggb &lt;- ggplot(away_wins_season, aes(group = season, fill = champion)) +
+  geom_col(aes(total_wins, team_long_name)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = &#39;free&#39;) +
+  xlab(&#39;Partidos ganados como visitantes&#39;) +
+  ylab(&#39;Equipo&#39;) + 
+  theme(text=element_text(size=7)) +
+  labs(fill = &quot;Campeón&quot;)
+
+print(gga)
+print(ggb)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
 <div id="hallazgo-3-el-jugador-con-la-puntuación-más-alta" class="section level1">
 <h1>Hallazgo 3: El jugador con la puntuación más alta</h1>
-<p>highest_rating &lt;- player_attributes %&gt;% filter(overall_rating
-== max(overall_rating, na.rm = TRUE)) %&gt;% left_join(players, by =
-c(“player_api_id” = “player_api_id”))</p>
-<p>print(highest_rating);</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaGlnaGVzdF9yYXRpbmcgPC0gcGxheWVyX2F0dHJpYnV0ZXMgJT4lXG4gIGZpbHRlcihvdmVyYWxsX3JhdGluZyA9PSBtYXgob3ZlcmFsbF9yYXRpbmcsIG5hLnJtID0gVFJVRSkpICU+JVxuICBsZWZ0X2pvaW4ocGxheWVycywgYnkgPSBjKFwicGxheWVyX2FwaV9pZFwiID0gXCJwbGF5ZXJfYXBpX2lkXCIpKVxuXG5wcmludChoaWdoZXN0X3JhdGluZylcblxuYGBgIn0= -->
+<pre class="r"><code>highest_rating &lt;- player_attributes %&gt;%
+  filter(overall_rating == max(overall_rating, na.rm = TRUE)) %&gt;%
+  left_join(players, by = c(&quot;player_api_id&quot; = &quot;player_api_id&quot;))
+
+print(highest_rating)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
 <div id="hallazgo-4-el-jugador-con-la-puntuación-más-baja" class="section level1">
 <h1>Hallazgo 4: El jugador con la puntuación más baja</h1>
-<p>lowest_rating &lt;- player_attributes %&gt;% filter(overall_rating ==
-min(overall_rating, na.rm = TRUE)) %&gt;% left_join(players, by =
-c(“player_api_id” = “player_api_id”))</p>
-<p>print(lowest_rating);</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubG93ZXN0X3JhdGluZyA8LSBwbGF5ZXJfYXR0cmlidXRlcyAlPiVcbiAgZmlsdGVyKG92ZXJhbGxfcmF0aW5nID09IG1pbihvdmVyYWxsX3JhdGluZywgbmEucm0gPSBUUlVFKSkgJT4lXG4gIHRvcF9uKDEpICU+JVxuICBsZWZ0X2pvaW4ocGxheWVycywgYnkgPSBjKFwicGxheWVyX2FwaV9pZFwiID0gXCJwbGF5ZXJfYXBpX2lkXCIpKVxuXG5wcmludChsb3dlc3RfcmF0aW5nKVxuXG5cbmBgYCJ9 -->
+<pre class="r"><code>lowest_rating &lt;- player_attributes %&gt;%
+  filter(overall_rating == min(overall_rating, na.rm = TRUE)) %&gt;%
+  top_n(1) %&gt;%
+  left_join(players, by = c(&quot;player_api_id&quot; = &quot;player_api_id&quot;))
+
+print(lowest_rating)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
 <div id="hallazgo-5-el-equipo-con-mayor-diferencia-de-goles-a-favor-en-casa" class="section level1">
 <h1>Hallazgo 5: El equipo con mayor diferencia de goles a favor en
 casa:</h1>
-<p>home_goal_diff &lt;- matches %&gt;% group_by(home_team_api_id) %&gt;%
-summarise(total_goal_diff = sum(home_team_goal - away_team_goal)) %&gt;%
-arrange(desc(total_goal_diff)) %&gt;% top_n(1) %&gt;% left_join(teams,
-by = c(“home_team_api_id” = “team_api_id”))</p>
-<p>print(home_goal_diff);</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubG9jYWxfZ29hbF9kaWZmIDwtIGxvY2FsX3RlYW0gJT4lIGdyb3VwX2J5KHRlYW1fYXBpX2lkKSAlPiVcbiAgc3VtbWFyaXNlKHRvdGFsX2dvYWxfZGlmZiA9IHN1bShHRi1HQSkpICU+JVxuICBhcnJhbmdlKGRlc2ModG90YWxfZ29hbF9kaWZmKSkgJT4lIFxuICB0b3BfbigxMCkgJT4lXG4gIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCd0ZWFtX2FwaV9pZCcpKSAlPiVcbiAgbXV0YXRlKGxhYmVscyA9IGFzLmNoYXJhY3Rlcih0b3RhbF9nb2FsX2RpZmYpKSBcblxucHJpbnQobG9jYWxfZ29hbF9kaWZmKVxuXG4jIyMjXG5sb2NhbF9nb2FsX2RpZmZfc2Vhc29uIDwtIGxvY2FsX3RlYW0gJT4lIFxuICBncm91cF9ieSh0ZWFtX2FwaV9pZCxzZWFzb24sIGxlYWd1ZV9pZCkgJT4lXG4gIHN1bW1hcmlzZSh0b3RhbF9nb2FsX2RpZmYgPSBzdW0oR0YtR0EpKSAlPiUgXG4gIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCd0ZWFtX2FwaV9pZCcpKSAlPiUgXG4gIG1lcmdlKGNoYW1waW9uX3NlYXNvbiAlPiUgdHJhbnNtdXRlKHNlYXNvbiwgbGVhZ3VlX2lkLCBjaGFtcGlvbiA9IHRlYW1fYXBpX2lkKSwgYnkgPSBjKCdzZWFzb24nLCdsZWFndWVfaWQnKSkgJT4lXG4gIG11dGF0ZShjaGFtcGlvbiA9IHRlYW1fYXBpX2lkID09IGNoYW1waW9uKVxuXG5vcmRlbiA8LSBsb2NhbF9nb2FsX2RpZmYgJT4lIGFycmFuZ2UodG90YWxfZ29hbF9kaWZmKSAgXG5cbmdnYSA8LSBnZ3Bsb3QobG9jYWxfZ29hbF9kaWZmLCBhZXMoeCA9IHRvdGFsX2dvYWxfZGlmZiwgeSA9IHRlYW1fbG9uZ19uYW1lKSkgK1xuICBnZW9tX2NvbCgpICtcbiAgZ2VvbV90ZXh0KGFlcyhsYWJlbCA9IHRvdGFsX2dvYWxfZGlmZiksIGhqdXN0ID0gMSwgbnVkZ2VfeCA9IC0wLjUsIGNvbG9yID0gJ3doaXRlJykgK1xuICBzY2FsZV95X2Rpc2NyZXRlKGxpbWl0cyA9IG9yZGVuJHRlYW1fbG9uZ19uYW1lKSArXG4gIHhsYWIoJ1BhcnRpZG9zIGdhbmFkb3MgY29tbyBsb2NhbCcpICtcbiAgeWxhYignRXF1aXBvJykgXG4gIFxuZ2diIDwtIGdncGxvdChsb2NhbF9nb2FsX2RpZmZfc2Vhc29uLCBhZXMoZ3JvdXAgPSBzZWFzb24pKSArXG4gIGdlb21fY29sKGFlcyh0b3RhbF9nb2FsX2RpZmYsIHRlYW1fbG9uZ19uYW1lLCAgZmlsbCA9IGNoYW1waW9uKSkgK1xuICBzY2FsZV95X2Rpc2NyZXRlKGxpbWl0cyA9IG9yZGVuJHRlYW1fbG9uZ19uYW1lKSArXG4gIGZhY2V0X3dyYXAofnNlYXNvbiwgc2NhbGVzID0gJ2ZyZWUnKSArXG4gIHhsYWIoJ0RpZmVyZW5jaWEgZGUgZ29sZXMgY29tbyBsb2NhbCcpICtcbiAgeWxhYignRXF1aXBvJykgKyBcbiAgdGhlbWUodGV4dD1lbGVtZW50X3RleHQoc2l6ZT03KSkgK1xuICBsYWJzKGZpbGwgPSBcIkNhbXBlw7NuIGRlIExpZ2FcIilcblxucHJpbnQoZ2dhKVxucHJpbnQoZ2diKVxuXG4jIyNcblxuYGBgIn0= -->
+<pre class="r"><code>local_goal_diff &lt;- local_team %&gt;% group_by(team_api_id) %&gt;%
+  summarise(total_goal_diff = sum(GF-GA)) %&gt;%
+  arrange(desc(total_goal_diff)) %&gt;% 
+  top_n(10) %&gt;%
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;%
+  mutate(labels = as.character(total_goal_diff)) 
+
+print(local_goal_diff)
+
+####
+local_goal_diff_season &lt;- local_team %&gt;% 
+  group_by(team_api_id,season, league_id) %&gt;%
+  summarise(total_goal_diff = sum(GF-GA)) %&gt;% 
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;% 
+  merge(champion_season %&gt;% transmute(season, league_id, champion = team_api_id), by = c(&#39;season&#39;,&#39;league_id&#39;)) %&gt;%
+  mutate(champion = team_api_id == champion)
+
+orden &lt;- local_goal_diff %&gt;% arrange(total_goal_diff)  
+
+gga &lt;- ggplot(local_goal_diff, aes(x = total_goal_diff, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_goal_diff), hjust = 1, nudge_x = -0.5, color = &#39;white&#39;) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab(&#39;Partidos ganados como local&#39;) +
+  ylab(&#39;Equipo&#39;) 
+  
+ggb &lt;- ggplot(local_goal_diff_season, aes(group = season)) +
+  geom_col(aes(total_goal_diff, team_long_name,  fill = champion)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = &#39;free&#39;) +
+  xlab(&#39;Diferencia de goles como local&#39;) +
+  ylab(&#39;Equipo&#39;) + 
+  theme(text=element_text(size=7)) +
+  labs(fill = &quot;Campeón de Liga&quot;)
+
+print(gga)
+print(ggb)
+
+###
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
-<div id="hallazgo-6-el-equipo-con-mayor-diferencia-de-goels-en-contra-como-visitante" class="section level1">
-<h1>Hallazgo 6: El equipo con mayor diferencia de goels en contra como
+<div id="hallazgo-6-el-equipo-con-mayor-diferencia-de-goles-en-contra-como-visitante" class="section level1">
+<h1>Hallazgo 6: El equipo con mayor diferencia de goles en contra como
 visitante:</h1>
-<p>away_goal_diff &lt;- matches %&gt;% group_by(away_team_api_id) %&gt;%
-summarise(total_goal_diff = sum(away_team_goal - home_team_goal)) %&gt;%
-arrange(desc(total_goal_diff)) %&gt;% top_n(1) %&gt;% left_join(teams,
-by = c(“away_team_api_id” = “team_api_id”))</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYXdheV9nb2FsX2RpZmYgPC0gbWF0Y2hlcyAlPiVcbiAgZ3JvdXBfYnkoYXdheV90ZWFtX2FwaV9pZCkgJT4lXG4gIHN1bW1hcmlzZSh0b3RhbF9nb2FsX2RpZmYgPSBzdW0oYXdheV90ZWFtX2dvYWwgLSBob21lX3RlYW1fZ29hbCkpICU+JVxuICBhcnJhbmdlKGRlc2ModG90YWxfZ29hbF9kaWZmKSkgJT4lXG4gIHRvcF9uKDEpICU+JVxuICBsZWZ0X2pvaW4odGVhbXMsIGJ5ID0gYyhcImF3YXlfdGVhbV9hcGlfaWRcIiA9IFwidGVhbV9hcGlfaWRcIikpXG5cbnByaW50KGF3YXlfZ29hbF9kaWZmKVxuXG5cbmF3YXlfZ29hbF9kaWZmIDwtIGF3YXlfdGVhbSAlPiUgZ3JvdXBfYnkodGVhbV9hcGlfaWQpICU+JVxuICBzdW1tYXJpc2UodG90YWxfZ29hbF9kaWZmID0gc3VtKEdGLUdBKSkgJT4lXG4gIGFycmFuZ2UoZGVzYyh0b3RhbF9nb2FsX2RpZmYpKSAlPiUgXG4gIHRvcF9uKDEwKSAlPiVcbiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoJ3RlYW1fYXBpX2lkJykpICU+JVxuICBtdXRhdGUobGFiZWxzID0gYXMuY2hhcmFjdGVyKHRvdGFsX2dvYWxfZGlmZikpIFxuXG5wcmludChsb2NhbF9nb2FsX2RpZmYpXG5cbiMjIyNcbmF3YXlfZ29hbF9kaWZmX3NlYXNvbiA8LSBhd2F5X3RlYW0gJT4lIFxuICBncm91cF9ieSh0ZWFtX2FwaV9pZCxzZWFzb24sIGxlYWd1ZV9pZCkgJT4lXG4gIHN1bW1hcmlzZSh0b3RhbF9nb2FsX2RpZmYgPSBzdW0oR0YtR0EpKSAlPiUgXG4gIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCd0ZWFtX2FwaV9pZCcpKSAlPiUgXG4gIG1lcmdlKGNoYW1waW9uX3NlYXNvbiAlPiUgdHJhbnNtdXRlKHNlYXNvbiwgbGVhZ3VlX2lkLCBjaGFtcGlvbiA9IHRlYW1fYXBpX2lkKSwgYnkgPSBjKCdzZWFzb24nLCdsZWFndWVfaWQnKSkgJT4lXG4gIG11dGF0ZShjaGFtcGlvbiA9IHRlYW1fYXBpX2lkID09IGNoYW1waW9uKVxuXG5vcmRlbiA8LSBhd2F5X2dvYWxfZGlmZiAlPiUgYXJyYW5nZSh0b3RhbF9nb2FsX2RpZmYpICBcblxuZ2dhIDwtIGdncGxvdChhd2F5X2dvYWxfZGlmZiwgYWVzKHggPSB0b3RhbF9nb2FsX2RpZmYsIHkgPSB0ZWFtX2xvbmdfbmFtZSkpICtcbiAgZ2VvbV9jb2woKSArXG4gIGdlb21fdGV4dChhZXMobGFiZWwgPSB0b3RhbF9nb2FsX2RpZmYpLCBoanVzdCA9IDEsIG51ZGdlX3ggPSAtMC41LCBjb2xvciA9ICd3aGl0ZScpICtcbiAgc2NhbGVfeV9kaXNjcmV0ZShsaW1pdHMgPSBvcmRlbiR0ZWFtX2xvbmdfbmFtZSkgK1xuICB4bGFiKCdQYXJ0aWRvcyBnYW5hZG9zIGNvbW8gbG9jYWwnKSArXG4gIHlsYWIoJ0VxdWlwbycpIFxuICBcbmdnYiA8LSBnZ3Bsb3QoYXdheV9nb2FsX2RpZmZfc2Vhc29uLCBhZXMoZ3JvdXAgPSBzZWFzb24pKSArXG4gIGdlb21fY29sKGFlcyh0b3RhbF9nb2FsX2RpZmYsIHRlYW1fbG9uZ19uYW1lLCAgZmlsbCA9IGNoYW1waW9uKSkgK1xuICBzY2FsZV95X2Rpc2NyZXRlKGxpbWl0cyA9IG9yZGVuJHRlYW1fbG9uZ19uYW1lKSArXG4gIGZhY2V0X3dyYXAofnNlYXNvbiwgc2NhbGVzID0gJ2ZyZWUnKSArXG4gIHhsYWIoJ0RpZmVyZW5jaWEgZGUgZ29sZXMgcG9yIHBhcnRpZG8gY29tbyB2aXNpdGFudGUnKSArXG4gIHlsYWIoJ0VxdWlwbycpICsgXG4gIHRoZW1lKHRleHQ9ZWxlbWVudF90ZXh0KHNpemU9NykpICtcbiAgbGFicyhmaWxsID0gXCJDYW1wZcOzbiBkZSBMaWdhXCIpXG5cbnByaW50KGdnYSlcbnByaW50KGdnYilcblxuXG5cbmBgYCJ9 -->
+<pre class="r"><code>away_goal_diff &lt;- matches %&gt;%
+  group_by(away_team_api_id) %&gt;%
+  summarise(total_goal_diff = sum(away_team_goal - home_team_goal)) %&gt;%
+  arrange(desc(total_goal_diff)) %&gt;%
+  top_n(1) %&gt;%
+  left_join(teams, by = c(&quot;away_team_api_id&quot; = &quot;team_api_id&quot;))
+
+print(away_goal_diff)
+
+
+away_goal_diff &lt;- away_team %&gt;% group_by(team_api_id) %&gt;%
+  summarise(total_goal_diff = sum(GF-GA)) %&gt;%
+  arrange(desc(total_goal_diff)) %&gt;% 
+  top_n(10) %&gt;%
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;%
+  mutate(labels = as.character(total_goal_diff)) 
+
+print(local_goal_diff)
+
+####
+away_goal_diff_season &lt;- away_team %&gt;% 
+  group_by(team_api_id,season, league_id) %&gt;%
+  summarise(total_goal_diff = sum(GF-GA)) %&gt;% 
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;% 
+  merge(champion_season %&gt;% transmute(season, league_id, champion = team_api_id), by = c(&#39;season&#39;,&#39;league_id&#39;)) %&gt;%
+  mutate(champion = team_api_id == champion)
+
+orden &lt;- away_goal_diff %&gt;% arrange(total_goal_diff)  
+
+gga &lt;- ggplot(away_goal_diff, aes(x = total_goal_diff, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_goal_diff), hjust = 1, nudge_x = -0.5, color = &#39;white&#39;) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab(&#39;Partidos ganados como local&#39;) +
+  ylab(&#39;Equipo&#39;) 
+  
+ggb &lt;- ggplot(away_goal_diff_season, aes(group = season)) +
+  geom_col(aes(total_goal_diff, team_long_name,  fill = champion)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = &#39;free&#39;) +
+  xlab(&#39;Diferencia de goles por partido como visitante&#39;) +
+  ylab(&#39;Equipo&#39;) + 
+  theme(text=element_text(size=7)) +
+  labs(fill = &quot;Campeón de Liga&quot;)
+
+print(gga)
+print(ggb)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
 <div id="muestra-los-resultados" class="section level1">
 <h1>Muestra los resultados</h1>
-<p>print(away_goal_diff);</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJpbnQoYXdheV9nb2FsX2RpZmYpXG5gYGAifQ== -->
+<pre class="r"><code>print(away_goal_diff)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
-<div id="hallazgo-7-el-equipo-con-la-mayor-cantidad-de-partidos-en-la-base-de-datos" class="section level1">
-<h1>Hallazgo 7: El equipo con la mayor cantidad de partidos en la base
-de datos:</h1>
-<p>team_matches &lt;- matches %&gt;% group_by(home_team_api_id) %&gt;%
-summarise(total_matches = n()) %&gt;% arrange(desc(total_matches))
-%&gt;% top_n(1) %&gt;% left_join(teams, by = c(“home_team_api_id” =
-“team_api_id”))</p>
-<p>print(team_matches);</p>
+<div id="hallazgo-7-el-equipo-que-mas-veces-ha-sido-campeon" class="section level1">
+<h1>Hallazgo 7: El equipo que mas veces ha sido campeon</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxud2lubmVycyA8LSBjaGFtcGlvbl9zZWFzb24gJT4lIFxuICBncm91cF9ieSh0ZWFtX2xvbmdfbmFtZSkgJT4lIFxuICBzdW1tYXJpc2UoY29wYXMgPSBuKCkpICU+JVxuICBhcnJhbmdlKGRlc2MoY29wYXMpKSAlPiUgXG4gIHRvcF9uKDEwKVxuXG4jIE11ZXN0cmEgbG9zIHJlc3VsdGFkb3Ncbndpbm5lcnNcblxuYGBgIn0= -->
+<pre class="r"><code>winners &lt;- champion_season %&gt;% 
+  group_by(team_long_name) %&gt;% 
+  summarise(copas = n()) %&gt;%
+  arrange(desc(copas)) %&gt;% 
+  top_n(10)
+
+# Muestra los resultados
+winners
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
 <div id="hallazgo-8-el-equipo-con-la-menor-cantidad-de-derrotas-como-visitante" class="section level1">
 <h1>Hallazgo 8: El equipo con la menor cantidad de derrotas como
 visitante:</h1>
-<p>away_losses &lt;- matches %&gt;% filter(away_team_goal &gt;
-home_team_goal) %&gt;% group_by(away_team_api_id) %&gt;%
-summarise(total_losses = n()) %&gt;% arrange(total_losses) %&gt;%
-top_n(1) %&gt;% left_join(teams, by = c(“away_team_api_id” =
-“team_api_id”))</p>
-<p>print(away_losses);</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYXdheV9sb3NzZXMgPC0gbWF0Y2hlcyAlPiVcbiAgZmlsdGVyKGF3YXlfdGVhbV9nb2FsID4gaG9tZV90ZWFtX2dvYWwpICU+JVxuICBncm91cF9ieShhd2F5X3RlYW1fYXBpX2lkKSAlPiVcbiAgc3VtbWFyaXNlKHRvdGFsX2xvc3NlcyA9IG4oKSkgJT4lXG4gIGFycmFuZ2UodG90YWxfbG9zc2VzKSAlPiVcbiAgdG9wX24oMSkgJT4lXG4gIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKFwiYXdheV90ZWFtX2FwaV9pZFwiID0gXCJ0ZWFtX2FwaV9pZFwiKSlcblxucHJpbnQoYXdheV9sb3NzZXMpXG5cblxuXG5cbmF3YXlfbG9zc2VzIDwtIGF3YXlfdGVhbSAlPiUgZ3JvdXBfYnkodGVhbV9hcGlfaWQpICU+JVxuICBzdW1tYXJpc2UodG90YWxfbG9zc2VzID0gc3VtKEwpKSAlPiVcbiAgYXJyYW5nZSh0b3RhbF9sb3NzZXMpICU+JSBcbiAgdG9wX24oMTApICU+JVxuICBsZWZ0X2pvaW4odGVhbXMsIGJ5ID0gYygndGVhbV9hcGlfaWQnKSkgJT4lXG4gIG11dGF0ZShsYWJlbHMgPSBhcy5jaGFyYWN0ZXIodG90YWxfbG9zc2VzKSkgXG5cbnByaW50KGF3YXlfbG9zc2VzKVxuXG4jIyMjXG5hd2F5X2xvc3Nlc19zZWFzb24gPC0gYXdheV90ZWFtICU+JSBcbiAgZ3JvdXBfYnkodGVhbV9hcGlfaWQsc2Vhc29uLCBsZWFndWVfaWQpICU+JVxuICBzdW1tYXJpc2UodG90YWxfbG9zc2VzID0gc3VtKEwpKSAlPiUgXG4gIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCd0ZWFtX2FwaV9pZCcpKSAlPiUgXG4gIG1lcmdlKGNoYW1waW9uX3NlYXNvbiAlPiUgdHJhbnNtdXRlKHNlYXNvbiwgbGVhZ3VlX2lkLCBjaGFtcGlvbiA9IHRlYW1fYXBpX2lkKSwgYnkgPSBjKCdzZWFzb24nLCdsZWFndWVfaWQnKSkgJT4lXG4gIG11dGF0ZShjaGFtcGlvbiA9IHRlYW1fYXBpX2lkID09IGNoYW1waW9uKVxuXG5vcmRlbiA8LSBhd2F5X2xvc3NlcyAlPiUgYXJyYW5nZShkZXNjKHRvdGFsX2xvc3NlcykpXG5cbmdnYSA8LSBnZ3Bsb3QoYXdheV9sb3NzZXMsIGFlcyh4ID0gdG90YWxfbG9zc2VzLCB5ID0gdGVhbV9sb25nX25hbWUpKSArXG4gIGdlb21fY29sKCkgK1xuICBnZW9tX3RleHQoYWVzKGxhYmVsID0gdG90YWxfbG9zc2VzKSwgaGp1c3QgPSAxLCBudWRnZV94ID0gLTAuNSwgY29sb3IgPSAnd2hpdGUnKSArXG4gIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICtcbiAgeGxhYignUGFydGlkb3MgZ2FuYWRvcyBjb21vIGxvY2FsJykgK1xuICB5bGFiKCdFcXVpcG8nKSBcbiAgXG5nZ2IgPC0gZ2dwbG90KGF3YXlfbG9zc2VzX3NlYXNvbiwgYWVzKGdyb3VwID0gc2Vhc29uKSkgK1xuICBnZW9tX2NvbChhZXModG90YWxfbG9zc2VzLCB0ZWFtX2xvbmdfbmFtZSwgIGZpbGwgPSBjaGFtcGlvbikpICtcbiAgc2NhbGVfeV9kaXNjcmV0ZShsaW1pdHMgPSBvcmRlbiR0ZWFtX2xvbmdfbmFtZSkgK1xuICBmYWNldF93cmFwKH5zZWFzb24sIHNjYWxlcyA9ICdmcmVlJykgK1xuICB4bGFiKCdQYXJ0aWRvcyBjb24gZGVycm90YSBjb21vIHZpc2l0YW50ZScpICtcbiAgeWxhYignRXF1aXBvJykgKyBcbiAgdGhlbWUodGV4dD1lbGVtZW50X3RleHQoc2l6ZT03KSkgK1xuICBsYWJzKGZpbGwgPSBcIkNhbXBlw7NuIGRlIExpZ2FcIilcblxucHJpbnQoZ2dhKVxucHJpbnQoZ2diKVxuXG5cbmBgYCJ9 -->
+<pre class="r"><code>away_losses &lt;- matches %&gt;%
+  filter(away_team_goal &gt; home_team_goal) %&gt;%
+  group_by(away_team_api_id) %&gt;%
+  summarise(total_losses = n()) %&gt;%
+  arrange(total_losses) %&gt;%
+  top_n(1) %&gt;%
+  left_join(teams, by = c(&quot;away_team_api_id&quot; = &quot;team_api_id&quot;))
+
+print(away_losses)
+
+
+
+
+away_losses &lt;- away_team %&gt;% group_by(team_api_id) %&gt;%
+  summarise(total_losses = sum(L)) %&gt;%
+  arrange(total_losses) %&gt;% 
+  top_n(10) %&gt;%
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;%
+  mutate(labels = as.character(total_losses)) 
+
+print(away_losses)
+
+####
+away_losses_season &lt;- away_team %&gt;% 
+  group_by(team_api_id,season, league_id) %&gt;%
+  summarise(total_losses = sum(L)) %&gt;% 
+  left_join(teams, by = c(&#39;team_api_id&#39;)) %&gt;% 
+  merge(champion_season %&gt;% transmute(season, league_id, champion = team_api_id), by = c(&#39;season&#39;,&#39;league_id&#39;)) %&gt;%
+  mutate(champion = team_api_id == champion)
+
+orden &lt;- away_losses %&gt;% arrange(desc(total_losses))
+
+gga &lt;- ggplot(away_losses, aes(x = total_losses, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_losses), hjust = 1, nudge_x = -0.5, color = &#39;white&#39;) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab(&#39;Partidos ganados como local&#39;) +
+  ylab(&#39;Equipo&#39;) 
+  
+ggb &lt;- ggplot(away_losses_season, aes(group = season)) +
+  geom_col(aes(total_losses, team_long_name,  fill = champion)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = &#39;free&#39;) +
+  xlab(&#39;Partidos con derrota como visitante&#39;) +
+  ylab(&#39;Equipo&#39;) + 
+  theme(text=element_text(size=7)) +
+  labs(fill = &quot;Campeón de Liga&quot;)
+
+print(gga)
+print(ggb)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 </div>
 <div id="hallazgo-9-los-10-jugadores-con-la-mayor-cantidad-de-goles-marcados-en-la-temporada" class="section level1">
 <h1>Hallazgo 9: Los 10 jugadores con la mayor cantidad de goles marcados
 en la temporada:</h1>
-<p>player_goals &lt;- matches %&gt;%
-select(home_player_1:away_player_11) %&gt;% gather(player,
-player_api_id) %&gt;% left_join(players, by = c(“player_api_id” =
-“player_api_id”)) %&gt;% group_by(player_name) %&gt;%
-summarise(total_goals = sum(!is.na(player))) %&gt;%
-arrange(desc(total_goals)) %&gt;% top_n(10)</p>
-<p>print(player_goals);</p>
-</div>
-<div id="hallazgo-10-los-10-equipos-con-la-mayor-cantidad-de-partidos-jugados-en-la-temporada" class="section level1">
-<h1>Hallazgo 10: Los 10 equipos con la mayor cantidad de partidos
-jugados en la temporada:</h1>
-<p>team_matches_played &lt;- matches %&gt;% group_by(home_team_api_id)
-%&gt;% summarise(total_matches = n()) %&gt;% bind_rows(matches %&gt;%
-group_by(away_team_api_id) %&gt;% summarise(total_matches = n())) %&gt;%
-group_by(home_team_api_id) %&gt;% summarise(total_matches =
-sum(total_matches)) %&gt;% arrange(desc(total_matches)) %&gt;% top_n(10)
-%&gt;% left_join(teams, by = c(“home_team_api_id” = “team_api_id”))</p>
-<p>print(team_matches_played);</p>
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxheWVyX2dvYWxzIDwtIGdvYWxzICU+JVxuICBzZWxlY3QobWF0Y2hfYXBpX2lkLCBwbGF5ZXIxX2lkLCBwbGF5ZXIyX2lkLCBnb2FscykgJT4lXG4gIG11dGF0ZShwbGF5ZXJfaWQgPSBpZl9lbHNlKGlzLm5hKHBsYXllcjFfaWQpLCBwbGF5ZXIyX2lkLCBwbGF5ZXIxX2lkKSkgJT4lXG4gIGdyb3VwX2J5KG1hdGNoX2FwaV9pZCwgcGxheWVyX2lkKSAlPiVcbiAgc3VtbWFyaXNlKHRvdGFsX2dvYWxzID0gc3VtKGdvYWxzLCBuYS5ybSA9IFRSVUUpKSAlPiVcbiAgdW5ncm91cCgpXG5cbnBsYXllcl9uYW1lcyA8LSBwbGF5ZXJzICU+JVxuICBzZWxlY3QocGxheWVyX2FwaV9pZCwgcGxheWVyX25hbWUpXG5cbnBsYXllcl9zZWFzb25fZ29hbHMgPC0gcGxheWVyX2dvYWxzICU+JVxuICBpbm5lcl9qb2luKHBsYXllcl9uYW1lcywgYnkgPSBjKFwicGxheWVyX2lkXCIgPSBcInBsYXllcl9hcGlfaWRcIikpICU+JVxuICBsZWZ0X2pvaW4obWF0Y2hlcywgYnkgPSBjKFwibWF0Y2hfYXBpX2lkXCIgPSBcIm1hdGNoX2FwaV9pZFwiKSkgJT4lXG4gIG11dGF0ZShzZWFzb24gPSBzZWFzb24pICU+JVxuICBncm91cF9ieShwbGF5ZXJfbmFtZSwgc2Vhc29uKSAlPiVcbiAgc3VtbWFyaXNlKHRvdGFsX2dvYWxzID0gc3VtKHRvdGFsX2dvYWxzKSkgJT4lXG4gIHVuZ3JvdXAoKVxuXG4jIE9idGVuZXIgZWwgdG9wIDEwIGRlIGdvbGVhZG9yZXMgcG9yIHRlbXBvcmFkYVxudG9wXzEwX3Njb3JlcnMgPC0gcGxheWVyX3NlYXNvbl9nb2FscyAlPiVcbiAgYXJyYW5nZShkZXNjKHRvdGFsX2dvYWxzKSkgJT4lXG4gIGdyb3VwX2J5KHNlYXNvbikgJT4lXG4gIHRvcF9uKDEwKVxuXG5wcmludCh0b3BfMTBfc2NvcmVycylcblxuYGBgIn0= -->
+<pre class="r"><code>player_goals &lt;- goals %&gt;%
+  select(match_api_id, player1_id, player2_id, goals) %&gt;%
+  mutate(player_id = if_else(is.na(player1_id), player2_id, player1_id)) %&gt;%
+  group_by(match_api_id, player_id) %&gt;%
+  summarise(total_goals = sum(goals, na.rm = TRUE)) %&gt;%
+  ungroup()
+
+player_names &lt;- players %&gt;%
+  select(player_api_id, player_name)
+
+player_season_goals &lt;- player_goals %&gt;%
+  inner_join(player_names, by = c(&quot;player_id&quot; = &quot;player_api_id&quot;)) %&gt;%
+  left_join(matches, by = c(&quot;match_api_id&quot; = &quot;match_api_id&quot;)) %&gt;%
+  mutate(season = season) %&gt;%
+  group_by(player_name, season) %&gt;%
+  summarise(total_goals = sum(total_goals)) %&gt;%
+  ungroup()
+
+# Obtener el top 10 de goleadores por temporada
+top_10_scorers &lt;- player_season_goals %&gt;%
+  arrange(desc(total_goals)) %&gt;%
+  group_by(season) %&gt;%
+  top_n(10)
+
+print(top_10_scorers)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="hallazgo-10-el-jugador-con-la-mayor-diferencia-entre-su-valoración-máxima-y-mínima-a-lo-largo-de-su-carrera" class="section level1">
+<h1>Hallazgo 10: El jugador con la mayor diferencia entre su valoración
+máxima y mínima a lo largo de su carrera</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxheWVyX3JhdGluZ19kaWZmZXJlbmNlIDwtIHBsYXllcl9hdHRyaWJ1dGVzICU+JVxuICBncm91cF9ieShwbGF5ZXJfYXBpX2lkKSAlPiVcbiAgc3VtbWFyaXNlKHJhdGluZ19kaWZmZXJlbmNlID0gbWF4KG92ZXJhbGxfcmF0aW5nLCBuYS5ybSA9IFRSVUUpIC0gbWluKG92ZXJhbGxfcmF0aW5nLCBuYS5ybSA9IFRSVUUpKSAlPiVcbiAgYXJyYW5nZShkZXNjKHJhdGluZ19kaWZmZXJlbmNlKSkgJT4lXG4gIHRvcF9uKDUpICU+JVxuICBsZWZ0X2pvaW4ocGxheWVycywgYnkgPSBcInBsYXllcl9hcGlfaWRcIilcblxuIyBNdWVzdHJhIGxvcyByZXN1bHRhZG9zXG5wbGF5ZXJfcmF0aW5nX2RpZmZlcmVuY2VcblxuYGBgIn0= -->
+<pre class="r"><code>player_rating_difference &lt;- player_attributes %&gt;%
+  group_by(player_api_id) %&gt;%
+  summarise(rating_difference = max(overall_rating, na.rm = TRUE) - min(overall_rating, na.rm = TRUE)) %&gt;%
+  arrange(desc(rating_difference)) %&gt;%
+  top_n(5) %&gt;%
+  left_join(players, by = &quot;player_api_id&quot;)
+
+# Muestra los resultados
+player_rating_difference
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiUHJveWVjdG8gQW5hbGlzaXMgZGUgRGF0b3MgRXVyb3BlYW4gU29jY2VyIDIwMTgiCm91dHB1dDogaHRtbF9ub3RlYm9vawotLS0KI0NhcmdhIGRlIGxpYnJlcmlhcyAoSW5zdGFsYXIgc2kgZXMgbmVjZXNhcmlvKQpsaWJyYXJ5KCJEQkkiKQpsaWJyYXJ5KCJST0RCQyIpCmxpYnJhcnkoIm9kYmMiKQpsaWJyYXJ5KCJSUG9zdGdyZXMiKQpsaWJyYXJ5KCJkcGx5ciIpCmxpYnJhcnkoImRicGx5ciIpCmxpYnJhcnkoZ2dwbG90MikKbGlicmFyeSh0aWR5cikKCiNDb25leGlvbiBjb24gYmFzZSBkZSBkYXRvcwpjb24gPC0gZGJDb25uZWN0KAogICAgUlBvc3RncmVzOjpQb3N0Z3JlcygpLAogICAgZGJuYW1lPSJldXJvcGVhbi1zb2NjZXIiLAogICAgaG9zdD0iMzQuMTYuMTM5LjIyMiIsCiAgICBwb3J0ID0gNTQzMiwKICAgIHVzZXIgPSAicG9zdGdyZXMiLCAKICAgIHBhc3N3b3JkID0gInBhc3N3b3JkIik7CgojQXNpZ25hY2lvbiBkZSB0YWJsYXMKdGFibGFzIDwtIGRiTGlzdFRhYmxlcyhjb24pOwoKI0NhcmdhIGRlIGRhdG9zIGVuIGxhIHRhYmxhIGVuIGxvcyBkYXRhc2V0cwpkYXRhc2V0cyA8LSBsYXBwbHkodGFibGFzLCBmdW5jdGlvbih0YWJsYSkgewogIHF1ZXJ5IDwtIHBhc3RlKCJTRUxFQ1QgKiBGUk9NIiwgZ3N1YignICcsJycscGFzdGUocGFzdGUoJyInLHRhYmxhKSwnIicpKSkKICBkYkdldFF1ZXJ5KGNvbiwgcXVlcnkpCn0pCgpuYW1lcyhkYXRhc2V0cykgPC0gdGFibGFzCgojIFZlcmlmaWNhbmRvIGRhdGFzZXRzCmxhcHBseShkYXRhc2V0cyxoZWFkKTsKIyBWZXJpZmljYW5kbyB2YWxvcmVzIGZhbHRhbnRlcyAoVmFsb3JlcyBudWxvcykKbGFwcGx5KGRhdGFzZXRzLCBmdW5jdGlvbih4KSBzdW0oaXMubmEoeCkpKQojIEV4cGxvcmFuZG8gZXN0cnVjdHVyYSBkZSB0YWJsYXMKbGFwcGx5KGRhdGFzZXRzLCBzdHIpCgoKCm1hdGNoZXMgPC0gZGF0YXNldHMkTWF0Y2g7CnRlYW1zIDwtIGRhdGFzZXRzJHRlYW07CmNvdW50cmllcyA8LSBkYXRhc2V0cyRjb3VudHJ5OwpsZWFndWVzIDwtIGRhdGFzZXRzJGxlYWd1ZTsKcGxheWVycyA8LSBkYXRhc2V0cyRwbGF5ZXI7CnBsYXllcl9hdHRyaWJ1dGVzIDwtIGRhdGFzZXRzJHBsYXllcl9hdHRyaWJ1dGVzOwp0ZWFtX2F0dHJpYnV0ZXMgPC0gZGF0YXNldHMkdGVhbV9hdHRyaWJ1dGVzOwoKI09ic2VydmFyIGNvbHVtbmFzIGRlIGNhZGEgZGF0YXNldApjb2xuYW1lcyhtYXRjaGVzKTsKY29sbmFtZXModGVhbXMpOwpjb2xuYW1lcyhjb3VudHJpZXMpOwpjb2xuYW1lcyhsZWFndWVzKTsKY29sbmFtZXMocGxheWVycyk7CmNvbG5hbWVzKHBsYXllcl9hdHRyaWJ1dGVzKTsKY29sbmFtZXModGVhbV9hdHRyaWJ1dGVzKTsKCiMgVmlzdWFsaXphciBsYXMgcHJpbWVyYXMgZmlsYXMgZGUgY2FkYSBkYXRhc2V0CmhlYWQobWF0Y2hlcykKaGVhZCh0ZWFtcykKaGVhZChjb3VudHJpZXMpCmhlYWQobGVhZ3VlcykKaGVhZChwbGF5ZXJzKQpoZWFkKHBsYXllcl9hdHRyaWJ1dGVzKQpoZWFkKHRlYW1fYXR0cmlidXRlcykKCiMgUmVzdW1lbiBlc3RhZMOtc3RpY28gZGUgbG9zIGRhdGFzZXRzCnN1bW1hcnkobWF0Y2hlcykKc3VtbWFyeSh0ZWFtcykKc3VtbWFyeShjb3VudHJpZXMpCnN1bW1hcnkobGVhZ3VlcykKc3VtbWFyeShwbGF5ZXJzKQpzdW1tYXJ5KHBsYXllcl9hdHRyaWJ1dGVzKQpzdW1tYXJ5KHRlYW1fYXR0cmlidXRlcykKCiMgQ29tcHJvYmFyIGRpbWVuc2lvbmVzIGRlIGxvcyBkYXRhc2V0cwpkaW0obWF0Y2hlcykKZGltKHRlYW1zKQpkaW0oY291bnRyaWVzKQpkaW0obGVhZ3VlcykKZGltKHBsYXllcnMpCmRpbShwbGF5ZXJfYXR0cmlidXRlcykKZGltKHRlYW1fYXR0cmlidXRlcykKCmRiRGlzY29ubmVjdChjb24pCgojIEhhbGxhemdvIDE6IDEwIEVxdWlwb3MgbG9jYWxlcyBjb24gbcOhcyB2aWN0b3JpYXMKCmxvY2FsX3dpbnMgPC0gbWF0Y2hlcyAlPiUKICBmaWx0ZXIoaG9tZV90ZWFtX2dvYWwgPiBhd2F5X3RlYW1fZ29hbCkgJT4lCiAgZ3JvdXBfYnkoaG9tZV90ZWFtX2FwaV9pZCkgJT4lCiAgc3VtbWFyaXNlKHRvdGFsX3dpbnMgPSBuKCkpICU+JQogIGFycmFuZ2UoZGVzYyh0b3RhbF93aW5zKSkgJT4lCiAgdG9wX24oMTApICU+JQogIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCJob21lX3RlYW1fYXBpX2lkIiA9ICJ0ZWFtX2FwaV9pZCIpKQoKcHJpbnQobG9jYWxfd2lucyk7CgojIEhhbGxhemdvIDI6IDEwIGVxdWlwb3MgdmlzaXRhbnRlcyBjb24gbcOhcyB2aWN0b3JpYXM6Cgphd2F5X3dpbnMgPC0gbWF0Y2hlcyAlPiUKICBmaWx0ZXIoYXdheV90ZWFtX2dvYWwgPiBob21lX3RlYW1fZ29hbCkgJT4lCiAgZ3JvdXBfYnkoYXdheV90ZWFtX2FwaV9pZCkgJT4lCiAgc3VtbWFyaXNlKHRvdGFsX3dpbnMgPSBuKCkpICU+JQogIGFycmFuZ2UoZGVzYyh0b3RhbF93aW5zKSkgJT4lCiAgdG9wX24oMTApICU+JQogIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCJhd2F5X3RlYW1fYXBpX2lkIiA9ICJ0ZWFtX2FwaV9pZCIpKQoKcHJpbnQoYXdheV93aW5zKTsKCiMgSGFsbGF6Z28gMzogRWwganVnYWRvciBjb24gbGEgcHVudHVhY2nDs24gbcOhcyBhbHRhCgpoaWdoZXN0X3JhdGluZyA8LSBwbGF5ZXJfYXR0cmlidXRlcyAlPiUKICBmaWx0ZXIob3ZlcmFsbF9yYXRpbmcgPT0gbWF4KG92ZXJhbGxfcmF0aW5nLCBuYS5ybSA9IFRSVUUpKSAlPiUKICBsZWZ0X2pvaW4ocGxheWVycywgYnkgPSBjKCJwbGF5ZXJfYXBpX2lkIiA9ICJwbGF5ZXJfYXBpX2lkIikpCgpwcmludChoaWdoZXN0X3JhdGluZyk7CgojIEhhbGxhemdvIDQ6IEVsIGp1Z2Fkb3IgY29uIGxhIHB1bnR1YWNpw7NuIG3DoXMgYmFqYQpsb3dlc3RfcmF0aW5nIDwtIHBsYXllcl9hdHRyaWJ1dGVzICU+JQogIGZpbHRlcihvdmVyYWxsX3JhdGluZyA9PSBtaW4ob3ZlcmFsbF9yYXRpbmcsIG5hLnJtID0gVFJVRSkpICU+JQogIGxlZnRfam9pbihwbGF5ZXJzLCBieSA9IGMoInBsYXllcl9hcGlfaWQiID0gInBsYXllcl9hcGlfaWQiKSkKCnByaW50KGxvd2VzdF9yYXRpbmcpOwoKIyBIYWxsYXpnbyA1OiBFbCBlcXVpcG8gY29uIG1heW9yIGRpZmVyZW5jaWEgZGUgZ29sZXMgYSBmYXZvciBlbiBjYXNhOgoKaG9tZV9nb2FsX2RpZmYgPC0gbWF0Y2hlcyAlPiUKICBncm91cF9ieShob21lX3RlYW1fYXBpX2lkKSAlPiUKICBzdW1tYXJpc2UodG90YWxfZ29hbF9kaWZmID0gc3VtKGhvbWVfdGVhbV9nb2FsIC0gYXdheV90ZWFtX2dvYWwpKSAlPiUKICBhcnJhbmdlKGRlc2ModG90YWxfZ29hbF9kaWZmKSkgJT4lCiAgdG9wX24oMSkgJT4lCiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoImhvbWVfdGVhbV9hcGlfaWQiID0gInRlYW1fYXBpX2lkIikpCgpwcmludChob21lX2dvYWxfZGlmZik7CgojIEhhbGxhemdvIDY6IEVsIGVxdWlwbyBjb24gbWF5b3IgZGlmZXJlbmNpYSBkZSBnb2VscyBlbiBjb250cmEgY29tbyB2aXNpdGFudGU6Cgphd2F5X2dvYWxfZGlmZiA8LSBtYXRjaGVzICU+JQogIGdyb3VwX2J5KGF3YXlfdGVhbV9hcGlfaWQpICU+JQogIHN1bW1hcmlzZSh0b3RhbF9nb2FsX2RpZmYgPSBzdW0oYXdheV90ZWFtX2dvYWwgLSBob21lX3RlYW1fZ29hbCkpICU+JQogIGFycmFuZ2UoZGVzYyh0b3RhbF9nb2FsX2RpZmYpKSAlPiUKICB0b3BfbigxKSAlPiUKICBsZWZ0X2pvaW4odGVhbXMsIGJ5ID0gYygiYXdheV90ZWFtX2FwaV9pZCIgPSAidGVhbV9hcGlfaWQiKSkKCiMgTXVlc3RyYSBsb3MgcmVzdWx0YWRvcwpwcmludChhd2F5X2dvYWxfZGlmZik7CgojIEhhbGxhemdvIDc6IEVsIGVxdWlwbyBjb24gbGEgbWF5b3IgY2FudGlkYWQgZGUgcGFydGlkb3MgZW4gbGEgYmFzZSBkZSBkYXRvczoKCnRlYW1fbWF0Y2hlcyA8LSBtYXRjaGVzICU+JQogIGdyb3VwX2J5KGhvbWVfdGVhbV9hcGlfaWQpICU+JQogIHN1bW1hcmlzZSh0b3RhbF9tYXRjaGVzID0gbigpKSAlPiUKICBhcnJhbmdlKGRlc2ModG90YWxfbWF0Y2hlcykpICU+JQogIHRvcF9uKDEpICU+JQogIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCJob21lX3RlYW1fYXBpX2lkIiA9ICJ0ZWFtX2FwaV9pZCIpKQoKcHJpbnQodGVhbV9tYXRjaGVzKTsKCiMgSGFsbGF6Z28gODogRWwgZXF1aXBvIGNvbiBsYSBtZW5vciBjYW50aWRhZCBkZSBkZXJyb3RhcyBjb21vIHZpc2l0YW50ZToKCmF3YXlfbG9zc2VzIDwtIG1hdGNoZXMgJT4lCiAgZmlsdGVyKGF3YXlfdGVhbV9nb2FsID4gaG9tZV90ZWFtX2dvYWwpICU+JQogIGdyb3VwX2J5KGF3YXlfdGVhbV9hcGlfaWQpICU+JQogIHN1bW1hcmlzZSh0b3RhbF9sb3NzZXMgPSBuKCkpICU+JQogIGFycmFuZ2UodG90YWxfbG9zc2VzKSAlPiUKICB0b3BfbigxKSAlPiUKICBsZWZ0X2pvaW4odGVhbXMsIGJ5ID0gYygiYXdheV90ZWFtX2FwaV9pZCIgPSAidGVhbV9hcGlfaWQiKSkKCnByaW50KGF3YXlfbG9zc2VzKTsKCiMgSGFsbGF6Z28gOTogTG9zIDEwIGp1Z2Fkb3JlcyBjb24gbGEgbWF5b3IgY2FudGlkYWQgZGUgZ29sZXMgbWFyY2Fkb3MgZW4gbGEgdGVtcG9yYWRhOgoKcGxheWVyX2dvYWxzIDwtIG1hdGNoZXMgJT4lCiAgc2VsZWN0KGhvbWVfcGxheWVyXzE6YXdheV9wbGF5ZXJfMTEpICU+JQogIGdhdGhlcihwbGF5ZXIsIHBsYXllcl9hcGlfaWQpICU+JQogIGxlZnRfam9pbihwbGF5ZXJzLCBieSA9IGMoInBsYXllcl9hcGlfaWQiID0gInBsYXllcl9hcGlfaWQiKSkgJT4lCiAgZ3JvdXBfYnkocGxheWVyX25hbWUpICU+JQogIHN1bW1hcmlzZSh0b3RhbF9nb2FscyA9IHN1bSghaXMubmEocGxheWVyKSkpICU+JQogIGFycmFuZ2UoZGVzYyh0b3RhbF9nb2FscykpICU+JQogIHRvcF9uKDEwKQoKcHJpbnQocGxheWVyX2dvYWxzKTsKCiMgSGFsbGF6Z28gMTA6IExvcyAxMCBlcXVpcG9zIGNvbiBsYSBtYXlvciBjYW50aWRhZCBkZSBwYXJ0aWRvcyBqdWdhZG9zIGVuIGxhIHRlbXBvcmFkYToKCnRlYW1fbWF0Y2hlc19wbGF5ZWQgPC0gbWF0Y2hlcyAlPiUKICBncm91cF9ieShob21lX3RlYW1fYXBpX2lkKSAlPiUKICBzdW1tYXJpc2UodG90YWxfbWF0Y2hlcyA9IG4oKSkgJT4lCiAgYmluZF9yb3dzKG1hdGNoZXMgJT4lCiAgICAgICAgICAgICAgZ3JvdXBfYnkoYXdheV90ZWFtX2FwaV9pZCkgJT4lCiAgICAgICAgICAgICAgc3VtbWFyaXNlKHRvdGFsX21hdGNoZXMgPSBuKCkpKSAlPiUKICBncm91cF9ieShob21lX3RlYW1fYXBpX2lkKSAlPiUKICBzdW1tYXJpc2UodG90YWxfbWF0Y2hlcyA9IHN1bSh0b3RhbF9tYXRjaGVzKSkgJT4lCiAgYXJyYW5nZShkZXNjKHRvdGFsX21hdGNoZXMpKSAlPiUKICB0b3BfbigxMCkgJT4lCiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoImhvbWVfdGVhbV9hcGlfaWQiID0gInRlYW1fYXBpX2lkIikpCgpwcmludCh0ZWFtX21hdGNoZXNfcGxheWVkKTsKCgoKCgoK</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiUHJveWVjdG8gQW5hbGlzaXMgZGUgRGF0b3MgRXVyb3BlYW4gU29jY2VyIDIwMTgiCm91dHB1dDogaHRtbF9ub3RlYm9vawotLS0KCiMgQ2FyZ2EgZGUgbGlicmVyaWFzCmBgYHtyfQppZiAoIWFueSgucGFja2FnZXMoYWxsLmF2YWlsYWJsZSA9IFQpID09ICdEQkknKSkgICAgIGluc3RhbGwucGFja2FnZXMoJ0RCSScsIGRlcGVuZGVuY2llcyA9IFQpICAgICAKaWYgKCFhbnkoLnBhY2thZ2VzKGFsbC5hdmFpbGFibGUgPSBUKSA9PSAnUk9EQkMnKSkgICAgICBpbnN0YWxsLnBhY2thZ2VzKCdST0RCQycsIGRlcGVuZGVuY2llcyA9IFQpICAgICAgCmlmICghYW55KC5wYWNrYWdlcyhhbGwuYXZhaWxhYmxlID0gVCkgPT0gJ29kYmMnKSkgICAgaW5zdGFsbC5wYWNrYWdlcygnb2RiYycsIGRlcGVuZGVuY2llcyA9IFQpICAgIAppZiAoIWFueSgucGFja2FnZXMoYWxsLmF2YWlsYWJsZSA9IFQpID09ICdSUG9zdGdyZXMnKSkgICAgIGluc3RhbGwucGFja2FnZXMoJ1JQb3N0Z3JlcycsIGRlcGVuZGVuY2llcyA9IFQpICAgCmlmICghYW55KC5wYWNrYWdlcyhhbGwuYXZhaWxhYmxlID0gVCkgPT0gJ2RwbHlyJykpICAgICAgaW5zdGFsbC5wYWNrYWdlcygnZHBseXInLCBkZXBlbmRlbmNpZXMgPSBUKSAgICAgCmlmICghYW55KC5wYWNrYWdlcyhhbGwuYXZhaWxhYmxlID0gVCkgPT0gJ2RicGx5cicpKSBpbnN0YWxsLnBhY2thZ2VzKCdkYnBseXInLCBkZXBlbmRlbmNpZXMgPSBUKQppZiAoIWFueSgucGFja2FnZXMoYWxsLmF2YWlsYWJsZSA9IFQpID09ICdnZ3Bsb3QyJykpICBpbnN0YWxsLnBhY2thZ2VzKCdnZ3Bsb3QyJywgZGVwZW5kZW5jaWVzID0gVCkKaWYgKCFhbnkoLnBhY2thZ2VzKGFsbC5hdmFpbGFibGUgPSBUKSA9PSAndGlkeXInKSkgIGluc3RhbGwucGFja2FnZXMoJ3RpZHlyJywgZGVwZW5kZW5jaWVzID0gVCkKaWYgKCFhbnkoLnBhY2thZ2VzKGFsbC5hdmFpbGFibGUgPSBUKSA9PSAnZ2dwdWJyJykpICBpbnN0YWxsLnBhY2thZ2VzKCdnZ3B1YnInLCBkZXBlbmRlbmNpZXMgPSBUKQppZiAoIWFueSgucGFja2FnZXMoYWxsLmF2YWlsYWJsZSA9IFQpID09ICdnZ2ZvcnRpZnknKSkgIGluc3RhbGwucGFja2FnZXMoJ2dnZm9ydGlmeScsIGRlcGVuZGVuY2llcyA9IFQpCgpsaWJyYXJ5KCJEQkkiKQpsaWJyYXJ5KCJST0RCQyIpCmxpYnJhcnkoIm9kYmMiKQpsaWJyYXJ5KCJSUG9zdGdyZXMiKQpsaWJyYXJ5KCJkcGx5ciIpCmxpYnJhcnkoImRicGx5ciIpCmxpYnJhcnkoJ2dncGxvdDInKQpsaWJyYXJ5KCd0aWR5cicpCmxpYnJhcnkoJ2dncHVicicpCmxpYnJhcnkoJ2dnZm9ydGlmeScpCmBgYAojIENhcmdhIGRlIGRhdG9zCgojIyBDb25leGlvbiBjb24gYmFzZSBkZSBkYXRvcwpgYGB7cn0KIGNvbiA8LSBkYkNvbm5lY3QoCiAgICAgUlBvc3RncmVzOjpQb3N0Z3JlcygpLAogICAgIGRibmFtZT0iZXVyb3BlYW4tc29jY2VyIiwKICAgICBob3N0PSIzNC4xNi4xMzkuMjIyIiwKICAgICBwb3J0ID0gNTQzMiwKICAgICB1c2VyID0gInBvc3RncmVzIiwgCiAgICAgcGFzc3dvcmQgPSAicGFzc3dvcmQiKQpgYGAKCiMjIEFzaWduYWNpb24gZGUgdGFibGFzCmBgYHtyfQp0YWJsYXMgPC0gZGJMaXN0VGFibGVzKGNvbikKYGBgCgojIyBDYXJnYSBkZSBkYXRvcyBlbiBsYSB0YWJsYSBlbiBsb3MgZGF0YXNldHMKYGBge3J9CiBkYXRhc2V0cyA8LSBsYXBwbHkodGFibGFzLCBmdW5jdGlvbih0YWJsYSkgewogICBxdWVyeSA8LSBwYXN0ZSgiU0VMRUNUICogRlJPTSIsIGdzdWIoJyAnLCcnLHBhc3RlKHBhc3RlKCciJyx0YWJsYSksJyInKSkpCiAgIGRiR2V0UXVlcnkoY29uLCBxdWVyeSkKIH0pCiBuYW1lcyhkYXRhc2V0cykgPC0gdGFibGFzCmBgYAojIyBWZXJpZmljYW5kbyBkYXRhc2V0cwpgYGB7cn0KbGFwcGx5KGRhdGFzZXRzLGhlYWQpCmBgYAoKIyMgVmVyaWZpY2FuZG8gdmFsb3JlcyBmYWx0YW50ZXMgKFZhbG9yZXMgbnVsb3MpCmBgYHtyfQpsYXBwbHkoZGF0YXNldHMsIGZ1bmN0aW9uKHgpIHN1bShpcy5uYSh4KSkpCmBgYAoKIyMgRXhwbG9yYW5kbyBlc3RydWN0dXJhIGRlIHRhYmxhcwpgYGB7cn0KbGFwcGx5KGRhdGFzZXRzLCBzdHIpCgptYXRjaGVzIDwtIGRhdGFzZXRzJE1hdGNoCnRlYW1zIDwtIGRhdGFzZXRzJHRlYW0KY291bnRyaWVzIDwtIGRhdGFzZXRzJGNvdW50cnkKbGVhZ3VlcyA8LSBkYXRhc2V0cyRsZWFndWUKcGxheWVycyA8LSBkYXRhc2V0cyRwbGF5ZXIKcGxheWVyX2F0dHJpYnV0ZXMgPC0gZGF0YXNldHMkcGxheWVyX2F0dHJpYnV0ZXMKdGVhbV9hdHRyaWJ1dGVzIDwtIGRhdGFzZXRzJHRlYW1fYXR0cmlidXRlcwpgYGAKCiMjIE9ic2VydmFyIGNvbHVtbmFzIGRlIGNhZGEgZGF0YXNldApgYGB7cn0KY29sbmFtZXMobWF0Y2hlcykKY29sbmFtZXModGVhbXMpCmNvbG5hbWVzKGNvdW50cmllcykKY29sbmFtZXMobGVhZ3VlcykKY29sbmFtZXMocGxheWVycykKY29sbmFtZXMocGxheWVyX2F0dHJpYnV0ZXMpCmNvbG5hbWVzKHRlYW1fYXR0cmlidXRlcykKYGBgCgojIyBWaXN1YWxpemFyIGxhcyBwcmltZXJhcyBmaWxhcyBkZSBjYWRhIGRhdGFzZXQKYGBge3J9CmhlYWQobWF0Y2hlcykKaGVhZCh0ZWFtcykKaGVhZChjb3VudHJpZXMpCmhlYWQobGVhZ3VlcykKaGVhZChwbGF5ZXJzKQpoZWFkKHBsYXllcl9hdHRyaWJ1dGVzKQpoZWFkKHRlYW1fYXR0cmlidXRlcykKYGBgCgojIFJlc3VtZW4gZXN0YWTDrXN0aWNvIGRlIGxvcyBkYXRhc2V0cwpgYGB7cn0Kc3VtbWFyeShtYXRjaGVzKQpzdW1tYXJ5KHRlYW1zKQpzdW1tYXJ5KGNvdW50cmllcykKc3VtbWFyeShsZWFndWVzKQpzdW1tYXJ5KHBsYXllcnMpCnN1bW1hcnkocGxheWVyX2F0dHJpYnV0ZXMpCnN1bW1hcnkodGVhbV9hdHRyaWJ1dGVzKQoKYGBgCgojIENvbXByb2JhciBkaW1lbnNpb25lcyBkZSBsb3MgZGF0YXNldHMKYGBge3J9CmRpbShtYXRjaGVzKQpkaW0odGVhbXMpCmRpbShjb3VudHJpZXMpCmRpbShsZWFndWVzKQpkaW0ocGxheWVycykKZGltKHBsYXllcl9hdHRyaWJ1dGVzKQpkaW0odGVhbV9hdHRyaWJ1dGVzKQpgYGAKCiMgRGVzY29uZXhpw7NuIGRlIERCCmBgYHtyfQpkYkRpc2Nvbm5lY3QoY29uKQpgYGAKCiMjIyMjIyMjIyMjIyMjIyMjIyMjCmBgYHtyfQpsb2FkKCdkYXRvcy5SZGF0YScpCmBgYAojIyMjIyMjIyMjIyMjIyMjIyMjIwoKIyBUYWJsYSBkZSBQb3NpY2lvbmVzCgpgYGB7cn0KCmxvY2FsX3RlYW0gPC0gbWF0Y2hlcyAlPiUgCiAgICAgICAgICBtdXRhdGUoCiAgICAgICAgICAgIEdQID0gMSwKICAgICAgICAgICAgdGVhbV9hcGlfaWQgPSBob21lX3RlYW1fYXBpX2lkLAogICAgICAgICAgICBXID0gaG9tZV90ZWFtX2dvYWwgPiBhd2F5X3RlYW1fZ29hbCwKICAgICAgICAgICAgRCA9IGhvbWVfdGVhbV9nb2FsID09IGF3YXlfdGVhbV9nb2FsLAogICAgICAgICAgICBMID0gaG9tZV90ZWFtX2dvYWwgPCBhd2F5X3RlYW1fZ29hbCwKICAgICAgICAgICAgR0YgPSBob21lX3RlYW1fZ29hbCwKICAgICAgICAgICAgR0EgPSBhd2F5X3RlYW1fZ29hbAogICAgICAgICAgKSAlPiUgCiAgICAgICAgICBncm91cF9ieShzZWFzb24sIGxlYWd1ZV9pZCwgdGVhbV9hcGlfaWQpICU+JQogICAgICAgICAgc3VtbWFyaXNlKAogICAgICAgICAgICAgIEdQID0gbigpLFcgPSBzdW0oVyksIEQgPSBzdW0oRCksIEwgPSBzdW0oTCksIEdGID0gc3VtKEdGKSwgR0EgPSBzdW0oR0EpKSAlPiUKICAgICAgICAgIHVuZ3JvdXAKCmF3YXlfdGVhbSA8LSBtYXRjaGVzICU+JSAKICAgICAgICAgIG11dGF0ZSgKICAgICAgICAgICAgR1AgPSAxLAogICAgICAgICAgICB0ZWFtX2FwaV9pZCA9IGF3YXlfdGVhbV9hcGlfaWQsCiAgICAgICAgICAgIFcgPSBob21lX3RlYW1fZ29hbCA8IGF3YXlfdGVhbV9nb2FsLAogICAgICAgICAgICBEID0gaG9tZV90ZWFtX2dvYWwgPT0gYXdheV90ZWFtX2dvYWwsCiAgICAgICAgICAgIEwgPSBob21lX3RlYW1fZ29hbCA+IGF3YXlfdGVhbV9nb2FsLAogICAgICAgICAgICBHRiA9IGF3YXlfdGVhbV9nb2FsLAogICAgICAgICAgICBHQSA9IGhvbWVfdGVhbV9nb2FsCiAgICAgICAgICApICU+JSAKICAgICAgICAgIGdyb3VwX2J5KHNlYXNvbiwgbGVhZ3VlX2lkLCB0ZWFtX2FwaV9pZCkgJT4lCiAgICAgICAgICBzdW1tYXJpc2UoICAgICAgICAgICAgCiAgICAgICAgICAgIEdQID0gbigpLFcgPSBzdW0oVyksIEQgPSBzdW0oRCksIEwgPSBzdW0oTCksIEdGID0gc3VtKEdGKSwgR0EgPSBzdW0oR0EpKSAlPiUKICAgICAgICAgIHVuZ3JvdXAKCnBvc2l0aW9uX3RhYmxlIDwtIHVuaW9uKGxvY2FsX3RlYW0sIGF3YXlfdGVhbSkgJT4lCiAgICAgICAgICBncm91cF9ieShzZWFzb24sIGxlYWd1ZV9pZCwgdGVhbV9hcGlfaWQpICU+JQogICAgICAgICAgbXV0YXRlKEdEID0gR0YgLSBHQSwgUFRTID0gMypXICsgMSpEKSAlPiUKICAgICAgICAgIHN1bW1hcmlzZSggICAgICAgICAgICAKICAgICAgICAgICAgR1AgPSBzdW0oR1ApLFcgPSBzdW0oVyksIEQgPSBzdW0oRCksIEwgPSBzdW0oTCksIEdGID0gc3VtKEdGKSwgR0EgPSBzdW0oR0EpLAogICAgICAgICAgICBHRCA9IHN1bShHRCksIFBUUyA9IHN1bShQVFMpKSAlPiUKICBhcnJhbmdlKGRlc2MoUFRTKSkgJT4lIAogIGxlZnRfam9pbihsZWFndWVzLCBieSA9IGMoJ2xlYWd1ZV9pZCcgPSAnaWQnKSkgJT4lCiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoJ3RlYW1fYXBpX2lkJykpICU+JSAKICB1bmdyb3VwCgpwcmludChwb3NpdGlvbl90YWJsZSkKYGBgCgoKIyBDYW1wZW9uZXMgcG9yIExpZ2EKYGBge3J9CmNoYW1waW9uX3NlYXNvbiA8LSBwb3NpdGlvbl90YWJsZSAlPiUKICAgICAgICAgICAgZ3JvdXBfYnkoc2Vhc29uLCBsZWFndWVfaWQpICU+JQogICAgICAgICAgICBmaWx0ZXIoUFRTID09IG1heChQVFMpKSAlPiUKICAgICAgICAgICAgZmlsdGVyKEdEID09IG1heChHRCkpICU+JQogICAgICAgICAgICBhcnJhbmdlKGxlYWd1ZV9pZCwgc2Vhc29uKQoKcHJpbnQoY2hhbXBpb25fc2Vhc29uKQpgYGAKCiMgSGFsbGF6Z28gMTogMTAgRXF1aXBvcyBsb2NhbGVzIGNvbiBtw6FzIHZpY3RvcmlhcwpgYGB7cn0KCmxvY2FsX3dpbnMgPC0gbG9jYWxfdGVhbSAlPiUgZ3JvdXBfYnkodGVhbV9hcGlfaWQpICU+JQogIHN1bW1hcmlzZSh0b3RhbF93aW5zID0gc3VtKFcpKSAlPiUKICBhcnJhbmdlKGRlc2ModG90YWxfd2lucykpICU+JSAKICB0b3BfbigxMCkgJT4lCiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoJ3RlYW1fYXBpX2lkJykpICU+JQogIG11dGF0ZShsYWJlbHMgPSBhcy5jaGFyYWN0ZXIodG90YWxfd2lucykpIAoKcHJpbnQobG9jYWxfd2lucykKCiMjIyMKbG9jYWxfd2luc19zZWFzb24gPC0gbG9jYWxfdGVhbSAlPiUgCiAgZ3JvdXBfYnkodGVhbV9hcGlfaWQsc2Vhc29uLCBsZWFndWVfaWQpICU+JQogIHN1bW1hcmlzZSh0b3RhbF93aW5zID0gc3VtKFcpKSAlPiUgCiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoJ3RlYW1fYXBpX2lkJykpICU+JSAKICBtZXJnZShjaGFtcGlvbl9zZWFzb24gJT4lIHRyYW5zbXV0ZShzZWFzb24sIGxlYWd1ZV9pZCwgY2hhbXBpb24gPSB0ZWFtX2FwaV9pZCksIGJ5ID0gYygnc2Vhc29uJywnbGVhZ3VlX2lkJykpICU+JQogIG11dGF0ZShjaGFtcGlvbiA9IHRlYW1fYXBpX2lkID09IGNoYW1waW9uKQoKb3JkZW4gPC0gbG9jYWxfd2lucyAlPiUgYXJyYW5nZSh0b3RhbF93aW5zKSAgCgpnZ2EgPC0gZ2dwbG90KGxvY2FsX3dpbnMsIGFlcyh4ID0gdG90YWxfd2lucywgeSA9IHRlYW1fbG9uZ19uYW1lKSkgKwogIGdlb21fY29sKCkgKwogIGdlb21fdGV4dChhZXMobGFiZWwgPSB0b3RhbF93aW5zKSwgaGp1c3QgPSAxLCBudWRnZV94ID0gLTAuNSwgY29sb3IgPSAnd2hpdGUnKSArCiAgc2NhbGVfeV9kaXNjcmV0ZShsaW1pdHMgPSBvcmRlbiR0ZWFtX2xvbmdfbmFtZSkgKwogIHhsYWIoJ1BhcnRpZG9zIGdhbmFkb3MgY29tbyBsb2NhbCcpICsKICB5bGFiKCdFcXVpcG8nKSAKICAKZ2diIDwtIGdncGxvdChsb2NhbF93aW5zX3NlYXNvbiwgYWVzKGdyb3VwID0gc2Vhc29uKSkgKwogIGdlb21fY29sKGFlcyh0b3RhbF93aW5zLCB0ZWFtX2xvbmdfbmFtZSwgIGZpbGwgPSBjaGFtcGlvbikpICsKICBzY2FsZV95X2Rpc2NyZXRlKGxpbWl0cyA9IG9yZGVuJHRlYW1fbG9uZ19uYW1lKSArCiAgZmFjZXRfd3JhcCh+c2Vhc29uLCBzY2FsZXMgPSAnZnJlZScpICsKICB4bGFiKCdQYXJ0aWRvcyBnYW5hZG9zIGNvbW8gbG9jYWxlcycpICsKICB5bGFiKCdFcXVpcG8nKSArIAogIHRoZW1lKHRleHQ9ZWxlbWVudF90ZXh0KHNpemU9NykpICsKICBsYWJzKGZpbGwgPSAiQ2FtcGXDs24gZGUgTGlnYSIpCgpwcmludChnZ2EpCnByaW50KGdnYikKCiMjIwpgYGAKCiMgSGFsbGF6Z28gMjogMTAgZXF1aXBvcyB2aXNpdGFudGVzIGNvbiBtw6FzIHZpY3RvcmlhczoKYGBge3J9CmF3YXlfd2lucyA8LSBhd2F5X3RlYW0gJT4lIGdyb3VwX2J5KHRlYW1fYXBpX2lkKSAlPiUKICBzdW1tYXJpc2UodG90YWxfd2lucyA9IHN1bShXKSkgJT4lCiAgYXJyYW5nZShkZXNjKHRvdGFsX3dpbnMpKSAlPiUgCiAgdG9wX24oMTApICU+JQogIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCd0ZWFtX2FwaV9pZCcpKSAlPiUKICBtdXRhdGUobGFiZWxzID0gYXMuY2hhcmFjdGVyKHRvdGFsX3dpbnMpKSAKCnByaW50KGF3YXlfd2lucykKCiMjIyMKYXdheV93aW5zX3NlYXNvbiA8LSBhd2F5X3RlYW0gJT4lIAogIGdyb3VwX2J5KHRlYW1fYXBpX2lkLHNlYXNvbiwgbGVhZ3VlX2lkKSAlPiUKICBzdW1tYXJpc2UodG90YWxfd2lucyA9IHN1bShXKSkgJT4lIAogIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCd0ZWFtX2FwaV9pZCcpKSAlPiUgCiAgbWVyZ2UoY2hhbXBpb25fc2Vhc29uICU+JSB0cmFuc211dGUoc2Vhc29uLCBsZWFndWVfaWQsIGNoYW1waW9uID0gdGVhbV9hcGlfaWQpLCBieSA9IGMoJ3NlYXNvbicsJ2xlYWd1ZV9pZCcpKSAlPiUKICBtdXRhdGUoY2hhbXBpb24gPSB0ZWFtX2FwaV9pZCA9PSBjaGFtcGlvbikKCm9yZGVuID0gYXdheV93aW5zICU+JSBhcnJhbmdlKHRvdGFsX3dpbnMpICAKCmdnYSA8LSBnZ3Bsb3QoYXdheV93aW5zLCBhZXMoeCA9IHRvdGFsX3dpbnMsIHkgPSB0ZWFtX2xvbmdfbmFtZSkpICsKICBnZW9tX2NvbCgpICsKICBnZW9tX3RleHQoYWVzKGxhYmVsID0gdG90YWxfd2lucyksIGhqdXN0ID0gMSwgbnVkZ2VfeCA9IC0wLjUsIGNvbG9yID0gJ3doaXRlJykgKwogIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICsKICB4bGFiKCdQYXJ0aWRvcyBnYW5hZG9zIGNvbW8gbG9jYWwnKSArCiAgeWxhYignRXF1aXBvJykgCiAgCmdnYiA8LSBnZ3Bsb3QoYXdheV93aW5zX3NlYXNvbiwgYWVzKGdyb3VwID0gc2Vhc29uLCBmaWxsID0gY2hhbXBpb24pKSArCiAgZ2VvbV9jb2woYWVzKHRvdGFsX3dpbnMsIHRlYW1fbG9uZ19uYW1lKSkgKwogIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICsKICBmYWNldF93cmFwKH5zZWFzb24sIHNjYWxlcyA9ICdmcmVlJykgKwogIHhsYWIoJ1BhcnRpZG9zIGdhbmFkb3MgY29tbyB2aXNpdGFudGVzJykgKwogIHlsYWIoJ0VxdWlwbycpICsgCiAgdGhlbWUodGV4dD1lbGVtZW50X3RleHQoc2l6ZT03KSkgKwogIGxhYnMoZmlsbCA9ICJDYW1wZcOzbiIpCgpwcmludChnZ2EpCnByaW50KGdnYikKCmBgYAoKIyBIYWxsYXpnbyAzOiBFbCBqdWdhZG9yIGNvbiBsYSBwdW50dWFjacOzbiBtw6FzIGFsdGEKYGBge3J9CmhpZ2hlc3RfcmF0aW5nIDwtIHBsYXllcl9hdHRyaWJ1dGVzICU+JQogIGZpbHRlcihvdmVyYWxsX3JhdGluZyA9PSBtYXgob3ZlcmFsbF9yYXRpbmcsIG5hLnJtID0gVFJVRSkpICU+JQogIGxlZnRfam9pbihwbGF5ZXJzLCBieSA9IGMoInBsYXllcl9hcGlfaWQiID0gInBsYXllcl9hcGlfaWQiKSkKCnByaW50KGhpZ2hlc3RfcmF0aW5nKQoKYGBgCgojIEhhbGxhemdvIDQ6IEVsIGp1Z2Fkb3IgY29uIGxhIHB1bnR1YWNpw7NuIG3DoXMgYmFqYQpgYGB7cn0KbG93ZXN0X3JhdGluZyA8LSBwbGF5ZXJfYXR0cmlidXRlcyAlPiUKICBmaWx0ZXIob3ZlcmFsbF9yYXRpbmcgPT0gbWluKG92ZXJhbGxfcmF0aW5nLCBuYS5ybSA9IFRSVUUpKSAlPiUKICB0b3BfbigxKSAlPiUKICBsZWZ0X2pvaW4ocGxheWVycywgYnkgPSBjKCJwbGF5ZXJfYXBpX2lkIiA9ICJwbGF5ZXJfYXBpX2lkIikpCgpwcmludChsb3dlc3RfcmF0aW5nKQoKCmBgYAoKIyBIYWxsYXpnbyA1OiBFbCBlcXVpcG8gY29uIG1heW9yIGRpZmVyZW5jaWEgZGUgZ29sZXMgYSBmYXZvciBlbiBjYXNhOgpgYGB7cn0KbG9jYWxfZ29hbF9kaWZmIDwtIGxvY2FsX3RlYW0gJT4lIGdyb3VwX2J5KHRlYW1fYXBpX2lkKSAlPiUKICBzdW1tYXJpc2UodG90YWxfZ29hbF9kaWZmID0gc3VtKEdGLUdBKSkgJT4lCiAgYXJyYW5nZShkZXNjKHRvdGFsX2dvYWxfZGlmZikpICU+JSAKICB0b3BfbigxMCkgJT4lCiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoJ3RlYW1fYXBpX2lkJykpICU+JQogIG11dGF0ZShsYWJlbHMgPSBhcy5jaGFyYWN0ZXIodG90YWxfZ29hbF9kaWZmKSkgCgpwcmludChsb2NhbF9nb2FsX2RpZmYpCgojIyMjCmxvY2FsX2dvYWxfZGlmZl9zZWFzb24gPC0gbG9jYWxfdGVhbSAlPiUgCiAgZ3JvdXBfYnkodGVhbV9hcGlfaWQsc2Vhc29uLCBsZWFndWVfaWQpICU+JQogIHN1bW1hcmlzZSh0b3RhbF9nb2FsX2RpZmYgPSBzdW0oR0YtR0EpKSAlPiUgCiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoJ3RlYW1fYXBpX2lkJykpICU+JSAKICBtZXJnZShjaGFtcGlvbl9zZWFzb24gJT4lIHRyYW5zbXV0ZShzZWFzb24sIGxlYWd1ZV9pZCwgY2hhbXBpb24gPSB0ZWFtX2FwaV9pZCksIGJ5ID0gYygnc2Vhc29uJywnbGVhZ3VlX2lkJykpICU+JQogIG11dGF0ZShjaGFtcGlvbiA9IHRlYW1fYXBpX2lkID09IGNoYW1waW9uKQoKb3JkZW4gPC0gbG9jYWxfZ29hbF9kaWZmICU+JSBhcnJhbmdlKHRvdGFsX2dvYWxfZGlmZikgIAoKZ2dhIDwtIGdncGxvdChsb2NhbF9nb2FsX2RpZmYsIGFlcyh4ID0gdG90YWxfZ29hbF9kaWZmLCB5ID0gdGVhbV9sb25nX25hbWUpKSArCiAgZ2VvbV9jb2woKSArCiAgZ2VvbV90ZXh0KGFlcyhsYWJlbCA9IHRvdGFsX2dvYWxfZGlmZiksIGhqdXN0ID0gMSwgbnVkZ2VfeCA9IC0wLjUsIGNvbG9yID0gJ3doaXRlJykgKwogIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICsKICB4bGFiKCdQYXJ0aWRvcyBnYW5hZG9zIGNvbW8gbG9jYWwnKSArCiAgeWxhYignRXF1aXBvJykgCiAgCmdnYiA8LSBnZ3Bsb3QobG9jYWxfZ29hbF9kaWZmX3NlYXNvbiwgYWVzKGdyb3VwID0gc2Vhc29uKSkgKwogIGdlb21fY29sKGFlcyh0b3RhbF9nb2FsX2RpZmYsIHRlYW1fbG9uZ19uYW1lLCAgZmlsbCA9IGNoYW1waW9uKSkgKwogIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICsKICBmYWNldF93cmFwKH5zZWFzb24sIHNjYWxlcyA9ICdmcmVlJykgKwogIHhsYWIoJ0RpZmVyZW5jaWEgZGUgZ29sZXMgY29tbyBsb2NhbCcpICsKICB5bGFiKCdFcXVpcG8nKSArIAogIHRoZW1lKHRleHQ9ZWxlbWVudF90ZXh0KHNpemU9NykpICsKICBsYWJzKGZpbGwgPSAiQ2FtcGXDs24gZGUgTGlnYSIpCgpwcmludChnZ2EpCnByaW50KGdnYikKCiMjIwoKYGBgCgojIEhhbGxhemdvIDY6IEVsIGVxdWlwbyBjb24gbWF5b3IgZGlmZXJlbmNpYSBkZSBnb2xlcyBlbiBjb250cmEgY29tbyB2aXNpdGFudGU6CmBgYHtyfQphd2F5X2dvYWxfZGlmZiA8LSBtYXRjaGVzICU+JQogIGdyb3VwX2J5KGF3YXlfdGVhbV9hcGlfaWQpICU+JQogIHN1bW1hcmlzZSh0b3RhbF9nb2FsX2RpZmYgPSBzdW0oYXdheV90ZWFtX2dvYWwgLSBob21lX3RlYW1fZ29hbCkpICU+JQogIGFycmFuZ2UoZGVzYyh0b3RhbF9nb2FsX2RpZmYpKSAlPiUKICB0b3BfbigxKSAlPiUKICBsZWZ0X2pvaW4odGVhbXMsIGJ5ID0gYygiYXdheV90ZWFtX2FwaV9pZCIgPSAidGVhbV9hcGlfaWQiKSkKCnByaW50KGF3YXlfZ29hbF9kaWZmKQoKCmF3YXlfZ29hbF9kaWZmIDwtIGF3YXlfdGVhbSAlPiUgZ3JvdXBfYnkodGVhbV9hcGlfaWQpICU+JQogIHN1bW1hcmlzZSh0b3RhbF9nb2FsX2RpZmYgPSBzdW0oR0YtR0EpKSAlPiUKICBhcnJhbmdlKGRlc2ModG90YWxfZ29hbF9kaWZmKSkgJT4lIAogIHRvcF9uKDEwKSAlPiUKICBsZWZ0X2pvaW4odGVhbXMsIGJ5ID0gYygndGVhbV9hcGlfaWQnKSkgJT4lCiAgbXV0YXRlKGxhYmVscyA9IGFzLmNoYXJhY3Rlcih0b3RhbF9nb2FsX2RpZmYpKSAKCnByaW50KGxvY2FsX2dvYWxfZGlmZikKCiMjIyMKYXdheV9nb2FsX2RpZmZfc2Vhc29uIDwtIGF3YXlfdGVhbSAlPiUgCiAgZ3JvdXBfYnkodGVhbV9hcGlfaWQsc2Vhc29uLCBsZWFndWVfaWQpICU+JQogIHN1bW1hcmlzZSh0b3RhbF9nb2FsX2RpZmYgPSBzdW0oR0YtR0EpKSAlPiUgCiAgbGVmdF9qb2luKHRlYW1zLCBieSA9IGMoJ3RlYW1fYXBpX2lkJykpICU+JSAKICBtZXJnZShjaGFtcGlvbl9zZWFzb24gJT4lIHRyYW5zbXV0ZShzZWFzb24sIGxlYWd1ZV9pZCwgY2hhbXBpb24gPSB0ZWFtX2FwaV9pZCksIGJ5ID0gYygnc2Vhc29uJywnbGVhZ3VlX2lkJykpICU+JQogIG11dGF0ZShjaGFtcGlvbiA9IHRlYW1fYXBpX2lkID09IGNoYW1waW9uKQoKb3JkZW4gPC0gYXdheV9nb2FsX2RpZmYgJT4lIGFycmFuZ2UodG90YWxfZ29hbF9kaWZmKSAgCgpnZ2EgPC0gZ2dwbG90KGF3YXlfZ29hbF9kaWZmLCBhZXMoeCA9IHRvdGFsX2dvYWxfZGlmZiwgeSA9IHRlYW1fbG9uZ19uYW1lKSkgKwogIGdlb21fY29sKCkgKwogIGdlb21fdGV4dChhZXMobGFiZWwgPSB0b3RhbF9nb2FsX2RpZmYpLCBoanVzdCA9IDEsIG51ZGdlX3ggPSAtMC41LCBjb2xvciA9ICd3aGl0ZScpICsKICBzY2FsZV95X2Rpc2NyZXRlKGxpbWl0cyA9IG9yZGVuJHRlYW1fbG9uZ19uYW1lKSArCiAgeGxhYignUGFydGlkb3MgZ2FuYWRvcyBjb21vIGxvY2FsJykgKwogIHlsYWIoJ0VxdWlwbycpIAogIApnZ2IgPC0gZ2dwbG90KGF3YXlfZ29hbF9kaWZmX3NlYXNvbiwgYWVzKGdyb3VwID0gc2Vhc29uKSkgKwogIGdlb21fY29sKGFlcyh0b3RhbF9nb2FsX2RpZmYsIHRlYW1fbG9uZ19uYW1lLCAgZmlsbCA9IGNoYW1waW9uKSkgKwogIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICsKICBmYWNldF93cmFwKH5zZWFzb24sIHNjYWxlcyA9ICdmcmVlJykgKwogIHhsYWIoJ0RpZmVyZW5jaWEgZGUgZ29sZXMgcG9yIHBhcnRpZG8gY29tbyB2aXNpdGFudGUnKSArCiAgeWxhYignRXF1aXBvJykgKyAKICB0aGVtZSh0ZXh0PWVsZW1lbnRfdGV4dChzaXplPTcpKSArCiAgbGFicyhmaWxsID0gIkNhbXBlw7NuIGRlIExpZ2EiKQoKcHJpbnQoZ2dhKQpwcmludChnZ2IpCgoKCmBgYAoKCgojIE11ZXN0cmEgbG9zIHJlc3VsdGFkb3MKYGBge3J9CnByaW50KGF3YXlfZ29hbF9kaWZmKQpgYGAKCgoKIyBIYWxsYXpnbyA3OiBFbCBlcXVpcG8gcXVlIG1hcyB2ZWNlcyBoYSBzaWRvIGNhbXBlb24KYGBge3J9Cndpbm5lcnMgPC0gY2hhbXBpb25fc2Vhc29uICU+JSAKICBncm91cF9ieSh0ZWFtX2xvbmdfbmFtZSkgJT4lIAogIHN1bW1hcmlzZShjb3BhcyA9IG4oKSkgJT4lCiAgYXJyYW5nZShkZXNjKGNvcGFzKSkgJT4lIAogIHRvcF9uKDEwKQoKIyBNdWVzdHJhIGxvcyByZXN1bHRhZG9zCndpbm5lcnMKCmBgYAoKIyBIYWxsYXpnbyA4OiBFbCBlcXVpcG8gY29uIGxhIG1lbm9yIGNhbnRpZGFkIGRlIGRlcnJvdGFzIGNvbW8gdmlzaXRhbnRlOgpgYGB7cn0KYXdheV9sb3NzZXMgPC0gbWF0Y2hlcyAlPiUKICBmaWx0ZXIoYXdheV90ZWFtX2dvYWwgPiBob21lX3RlYW1fZ29hbCkgJT4lCiAgZ3JvdXBfYnkoYXdheV90ZWFtX2FwaV9pZCkgJT4lCiAgc3VtbWFyaXNlKHRvdGFsX2xvc3NlcyA9IG4oKSkgJT4lCiAgYXJyYW5nZSh0b3RhbF9sb3NzZXMpICU+JQogIHRvcF9uKDEpICU+JQogIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCJhd2F5X3RlYW1fYXBpX2lkIiA9ICJ0ZWFtX2FwaV9pZCIpKQoKcHJpbnQoYXdheV9sb3NzZXMpCgoKCgphd2F5X2xvc3NlcyA8LSBhd2F5X3RlYW0gJT4lIGdyb3VwX2J5KHRlYW1fYXBpX2lkKSAlPiUKICBzdW1tYXJpc2UodG90YWxfbG9zc2VzID0gc3VtKEwpKSAlPiUKICBhcnJhbmdlKHRvdGFsX2xvc3NlcykgJT4lIAogIHRvcF9uKDEwKSAlPiUKICBsZWZ0X2pvaW4odGVhbXMsIGJ5ID0gYygndGVhbV9hcGlfaWQnKSkgJT4lCiAgbXV0YXRlKGxhYmVscyA9IGFzLmNoYXJhY3Rlcih0b3RhbF9sb3NzZXMpKSAKCnByaW50KGF3YXlfbG9zc2VzKQoKIyMjIwphd2F5X2xvc3Nlc19zZWFzb24gPC0gYXdheV90ZWFtICU+JSAKICBncm91cF9ieSh0ZWFtX2FwaV9pZCxzZWFzb24sIGxlYWd1ZV9pZCkgJT4lCiAgc3VtbWFyaXNlKHRvdGFsX2xvc3NlcyA9IHN1bShMKSkgJT4lIAogIGxlZnRfam9pbih0ZWFtcywgYnkgPSBjKCd0ZWFtX2FwaV9pZCcpKSAlPiUgCiAgbWVyZ2UoY2hhbXBpb25fc2Vhc29uICU+JSB0cmFuc211dGUoc2Vhc29uLCBsZWFndWVfaWQsIGNoYW1waW9uID0gdGVhbV9hcGlfaWQpLCBieSA9IGMoJ3NlYXNvbicsJ2xlYWd1ZV9pZCcpKSAlPiUKICBtdXRhdGUoY2hhbXBpb24gPSB0ZWFtX2FwaV9pZCA9PSBjaGFtcGlvbikKCm9yZGVuIDwtIGF3YXlfbG9zc2VzICU+JSBhcnJhbmdlKGRlc2ModG90YWxfbG9zc2VzKSkKCmdnYSA8LSBnZ3Bsb3QoYXdheV9sb3NzZXMsIGFlcyh4ID0gdG90YWxfbG9zc2VzLCB5ID0gdGVhbV9sb25nX25hbWUpKSArCiAgZ2VvbV9jb2woKSArCiAgZ2VvbV90ZXh0KGFlcyhsYWJlbCA9IHRvdGFsX2xvc3NlcyksIGhqdXN0ID0gMSwgbnVkZ2VfeCA9IC0wLjUsIGNvbG9yID0gJ3doaXRlJykgKwogIHNjYWxlX3lfZGlzY3JldGUobGltaXRzID0gb3JkZW4kdGVhbV9sb25nX25hbWUpICsKICB4bGFiKCdQYXJ0aWRvcyBnYW5hZG9zIGNvbW8gbG9jYWwnKSArCiAgeWxhYignRXF1aXBvJykgCiAgCmdnYiA8LSBnZ3Bsb3QoYXdheV9sb3NzZXNfc2Vhc29uLCBhZXMoZ3JvdXAgPSBzZWFzb24pKSArCiAgZ2VvbV9jb2woYWVzKHRvdGFsX2xvc3NlcywgdGVhbV9sb25nX25hbWUsICBmaWxsID0gY2hhbXBpb24pKSArCiAgc2NhbGVfeV9kaXNjcmV0ZShsaW1pdHMgPSBvcmRlbiR0ZWFtX2xvbmdfbmFtZSkgKwogIGZhY2V0X3dyYXAofnNlYXNvbiwgc2NhbGVzID0gJ2ZyZWUnKSArCiAgeGxhYignUGFydGlkb3MgY29uIGRlcnJvdGEgY29tbyB2aXNpdGFudGUnKSArCiAgeWxhYignRXF1aXBvJykgKyAKICB0aGVtZSh0ZXh0PWVsZW1lbnRfdGV4dChzaXplPTcpKSArCiAgbGFicyhmaWxsID0gIkNhbXBlw7NuIGRlIExpZ2EiKQoKcHJpbnQoZ2dhKQpwcmludChnZ2IpCgoKYGBgCgojIEhhbGxhemdvIDk6IExvcyAxMCBqdWdhZG9yZXMgY29uIGxhIG1heW9yIGNhbnRpZGFkIGRlIGdvbGVzIG1hcmNhZG9zIGVuIGxhIHRlbXBvcmFkYToKYGBge3J9CnBsYXllcl9nb2FscyA8LSBnb2FscyAlPiUKICBzZWxlY3QobWF0Y2hfYXBpX2lkLCBwbGF5ZXIxX2lkLCBwbGF5ZXIyX2lkLCBnb2FscykgJT4lCiAgbXV0YXRlKHBsYXllcl9pZCA9IGlmX2Vsc2UoaXMubmEocGxheWVyMV9pZCksIHBsYXllcjJfaWQsIHBsYXllcjFfaWQpKSAlPiUKICBncm91cF9ieShtYXRjaF9hcGlfaWQsIHBsYXllcl9pZCkgJT4lCiAgc3VtbWFyaXNlKHRvdGFsX2dvYWxzID0gc3VtKGdvYWxzLCBuYS5ybSA9IFRSVUUpKSAlPiUKICB1bmdyb3VwKCkKCnBsYXllcl9uYW1lcyA8LSBwbGF5ZXJzICU+JQogIHNlbGVjdChwbGF5ZXJfYXBpX2lkLCBwbGF5ZXJfbmFtZSkKCnBsYXllcl9zZWFzb25fZ29hbHMgPC0gcGxheWVyX2dvYWxzICU+JQogIGlubmVyX2pvaW4ocGxheWVyX25hbWVzLCBieSA9IGMoInBsYXllcl9pZCIgPSAicGxheWVyX2FwaV9pZCIpKSAlPiUKICBsZWZ0X2pvaW4obWF0Y2hlcywgYnkgPSBjKCJtYXRjaF9hcGlfaWQiID0gIm1hdGNoX2FwaV9pZCIpKSAlPiUKICBtdXRhdGUoc2Vhc29uID0gc2Vhc29uKSAlPiUKICBncm91cF9ieShwbGF5ZXJfbmFtZSwgc2Vhc29uKSAlPiUKICBzdW1tYXJpc2UodG90YWxfZ29hbHMgPSBzdW0odG90YWxfZ29hbHMpKSAlPiUKICB1bmdyb3VwKCkKCiMgT2J0ZW5lciBlbCB0b3AgMTAgZGUgZ29sZWFkb3JlcyBwb3IgdGVtcG9yYWRhCnRvcF8xMF9zY29yZXJzIDwtIHBsYXllcl9zZWFzb25fZ29hbHMgJT4lCiAgYXJyYW5nZShkZXNjKHRvdGFsX2dvYWxzKSkgJT4lCiAgZ3JvdXBfYnkoc2Vhc29uKSAlPiUKICB0b3BfbigxMCkKCnByaW50KHRvcF8xMF9zY29yZXJzKQoKYGBgCgoKCiMgSGFsbGF6Z28gMTA6IEVsIGp1Z2Fkb3IgY29uIGxhIG1heW9yIGRpZmVyZW5jaWEgZW50cmUgc3UgdmFsb3JhY2nDs24gbcOheGltYSB5IG3DrW5pbWEgYSBsbyBsYXJnbyBkZSBzdSBjYXJyZXJhCmBgYHtyfQpwbGF5ZXJfcmF0aW5nX2RpZmZlcmVuY2UgPC0gcGxheWVyX2F0dHJpYnV0ZXMgJT4lCiAgZ3JvdXBfYnkocGxheWVyX2FwaV9pZCkgJT4lCiAgc3VtbWFyaXNlKHJhdGluZ19kaWZmZXJlbmNlID0gbWF4KG92ZXJhbGxfcmF0aW5nLCBuYS5ybSA9IFRSVUUpIC0gbWluKG92ZXJhbGxfcmF0aW5nLCBuYS5ybSA9IFRSVUUpKSAlPiUKICBhcnJhbmdlKGRlc2MocmF0aW5nX2RpZmZlcmVuY2UpKSAlPiUKICB0b3Bfbig1KSAlPiUKICBsZWZ0X2pvaW4ocGxheWVycywgYnkgPSAicGxheWVyX2FwaV9pZCIpCgojIE11ZXN0cmEgbG9zIHJlc3VsdGFkb3MKcGxheWVyX3JhdGluZ19kaWZmZXJlbmNlCgpgYGAK</div>
 
 
 

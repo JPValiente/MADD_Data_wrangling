@@ -2,63 +2,93 @@
 title: "Proyecto Analisis de Datos European Soccer 2018"
 output: html_notebook
 ---
-#Carga de librerias (Instalar si es necesario)
+
+# Carga de librerias
+```{r}
+if (!any(.packages(all.available = T) == 'DBI'))     install.packages('DBI', dependencies = T)     
+if (!any(.packages(all.available = T) == 'RODBC'))      install.packages('RODBC', dependencies = T)      
+if (!any(.packages(all.available = T) == 'odbc'))    install.packages('odbc', dependencies = T)    
+if (!any(.packages(all.available = T) == 'RPostgres'))     install.packages('RPostgres', dependencies = T)   
+if (!any(.packages(all.available = T) == 'dplyr'))      install.packages('dplyr', dependencies = T)     
+if (!any(.packages(all.available = T) == 'dbplyr')) install.packages('dbplyr', dependencies = T)
+if (!any(.packages(all.available = T) == 'ggplot2'))  install.packages('ggplot2', dependencies = T)
+if (!any(.packages(all.available = T) == 'tidyr'))  install.packages('tidyr', dependencies = T)
+if (!any(.packages(all.available = T) == 'ggpubr'))  install.packages('ggpubr', dependencies = T)
+if (!any(.packages(all.available = T) == 'ggfortify'))  install.packages('ggfortify', dependencies = T)
+
 library("DBI")
 library("RODBC")
 library("odbc")
 library("RPostgres")
 library("dplyr")
 library("dbplyr")
-library(ggplot2)
-library(tidyr)
+library('ggplot2')
+library('tidyr')
+library('ggpubr')
+library('ggfortify')
+```
+# Carga de datos
 
-#Conexion con base de datos
-con <- dbConnect(
-    RPostgres::Postgres(),
-    dbname="european-soccer",
-    host="34.16.139.222",
-    port = 5432,
-    user = "postgres", 
-    password = "password");
+## Conexion con base de datos
+```{r}
+ con <- dbConnect(
+     RPostgres::Postgres(),
+     dbname="european-soccer",
+     host="34.16.139.222",
+     port = 5432,
+     user = "postgres", 
+     password = "password")
+```
 
-#Asignacion de tablas
-tablas <- dbListTables(con);
+## Asignacion de tablas
+```{r}
+tablas <- dbListTables(con)
+```
 
-#Carga de datos en la tabla en los datasets
-datasets <- lapply(tablas, function(tabla) {
-  query <- paste("SELECT * FROM", gsub(' ','',paste(paste('"',tabla),'"')))
-  dbGetQuery(con, query)
-})
+## Carga de datos en la tabla en los datasets
+```{r}
+ datasets <- lapply(tablas, function(tabla) {
+   query <- paste("SELECT * FROM", gsub(' ','',paste(paste('"',tabla),'"')))
+   dbGetQuery(con, query)
+ })
+ names(datasets) <- tablas
+```
+## Verificando datasets
+```{r}
+lapply(datasets,head)
+```
 
-names(datasets) <- tablas
-
-# Verificando datasets
-lapply(datasets,head);
-# Verificando valores faltantes (Valores nulos)
+## Verificando valores faltantes (Valores nulos)
+```{r}
 lapply(datasets, function(x) sum(is.na(x)))
-# Explorando estructura de tablas
+```
+
+## Explorando estructura de tablas
+```{r}
 lapply(datasets, str)
 
+matches <- datasets$Match
+teams <- datasets$team
+countries <- datasets$country
+leagues <- datasets$league
+players <- datasets$player
+player_attributes <- datasets$player_attributes
+team_attributes <- datasets$team_attributes
+```
 
+## Observar columnas de cada dataset
+```{r}
+colnames(matches)
+colnames(teams)
+colnames(countries)
+colnames(leagues)
+colnames(players)
+colnames(player_attributes)
+colnames(team_attributes)
+```
 
-matches <- datasets$Match;
-teams <- datasets$team;
-countries <- datasets$country;
-leagues <- datasets$league;
-players <- datasets$player;
-player_attributes <- datasets$player_attributes;
-team_attributes <- datasets$team_attributes;
-
-#Observar columnas de cada dataset
-colnames(matches);
-colnames(teams);
-colnames(countries);
-colnames(leagues);
-colnames(players);
-colnames(player_attributes);
-colnames(team_attributes);
-
-# Visualizar las primeras filas de cada dataset
+## Visualizar las primeras filas de cada dataset
+```{r}
 head(matches)
 head(teams)
 head(countries)
@@ -66,8 +96,10 @@ head(leagues)
 head(players)
 head(player_attributes)
 head(team_attributes)
+```
 
 # Resumen estadístico de los datasets
+```{r}
 summary(matches)
 summary(teams)
 summary(countries)
@@ -76,7 +108,10 @@ summary(players)
 summary(player_attributes)
 summary(team_attributes)
 
+```
+
 # Comprobar dimensiones de los datasets
+```{r}
 dim(matches)
 dim(teams)
 dim(countries)
@@ -84,61 +119,233 @@ dim(leagues)
 dim(players)
 dim(player_attributes)
 dim(team_attributes)
+```
 
+# Desconexión de DB
+```{r}
 dbDisconnect(con)
+```
+
+####################
+```{r}
+load('datos.Rdata')
+```
+####################
+
+# Tabla de Posiciones
+
+```{r}
+
+local_team <- matches %>% 
+          mutate(
+            GP = 1,
+            team_api_id = home_team_api_id,
+            W = home_team_goal > away_team_goal,
+            D = home_team_goal == away_team_goal,
+            L = home_team_goal < away_team_goal,
+            GF = home_team_goal,
+            GA = away_team_goal
+          ) %>% 
+          group_by(season, league_id, team_api_id) %>%
+          summarise(
+              GP = n(),W = sum(W), D = sum(D), L = sum(L), GF = sum(GF), GA = sum(GA)) %>%
+          ungroup
+
+away_team <- matches %>% 
+          mutate(
+            GP = 1,
+            team_api_id = away_team_api_id,
+            W = home_team_goal < away_team_goal,
+            D = home_team_goal == away_team_goal,
+            L = home_team_goal > away_team_goal,
+            GF = away_team_goal,
+            GA = home_team_goal
+          ) %>% 
+          group_by(season, league_id, team_api_id) %>%
+          summarise(            
+            GP = n(),W = sum(W), D = sum(D), L = sum(L), GF = sum(GF), GA = sum(GA)) %>%
+          ungroup
+
+position_table <- union(local_team, away_team) %>%
+          group_by(season, league_id, team_api_id) %>%
+          mutate(GD = GF - GA, PTS = 3*W + 1*D) %>%
+          summarise(            
+            GP = sum(GP),W = sum(W), D = sum(D), L = sum(L), GF = sum(GF), GA = sum(GA),
+            GD = sum(GD), PTS = sum(PTS)) %>%
+  arrange(desc(PTS)) %>% 
+  left_join(leagues, by = c('league_id' = 'id')) %>%
+  left_join(teams, by = c('team_api_id')) %>% 
+  ungroup
+
+print(position_table)
+```
+
+
+# Campeones por Liga
+```{r}
+champion_season <- position_table %>%
+            group_by(season, league_id) %>%
+            filter(PTS == max(PTS)) %>%
+            filter(GD == max(GD)) %>%
+            arrange(league_id, season)
+
+print(champion_season)
+```
 
 # Hallazgo 1: 10 Equipos locales con más victorias
+```{r}
 
-local_wins <- matches %>%
-  filter(home_team_goal > away_team_goal) %>%
-  group_by(home_team_api_id) %>%
-  summarise(total_wins = n()) %>%
-  arrange(desc(total_wins)) %>%
+local_wins <- local_team %>% group_by(team_api_id) %>%
+  summarise(total_wins = sum(W)) %>%
+  arrange(desc(total_wins)) %>% 
   top_n(10) %>%
-  left_join(teams, by = c("home_team_api_id" = "team_api_id"))
+  left_join(teams, by = c('team_api_id')) %>%
+  mutate(labels = as.character(total_wins)) 
 
-print(local_wins);
+print(local_wins)
+
+####
+local_wins_season <- local_team %>% 
+  group_by(team_api_id,season, league_id) %>%
+  summarise(total_wins = sum(W)) %>% 
+  left_join(teams, by = c('team_api_id')) %>% 
+  merge(champion_season %>% transmute(season, league_id, champion = team_api_id), by = c('season','league_id')) %>%
+  mutate(champion = team_api_id == champion)
+
+orden <- local_wins %>% arrange(total_wins)  
+
+gga <- ggplot(local_wins, aes(x = total_wins, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_wins), hjust = 1, nudge_x = -0.5, color = 'white') +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab('Partidos ganados como local') +
+  ylab('Equipo') 
+  
+ggb <- ggplot(local_wins_season, aes(group = season)) +
+  geom_col(aes(total_wins, team_long_name,  fill = champion)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = 'free') +
+  xlab('Partidos ganados como locales') +
+  ylab('Equipo') + 
+  theme(text=element_text(size=7)) +
+  labs(fill = "Campeón de Liga")
+
+print(gga)
+print(ggb)
+
+###
+```
 
 # Hallazgo 2: 10 equipos visitantes con más victorias:
-
-away_wins <- matches %>%
-  filter(away_team_goal > home_team_goal) %>%
-  group_by(away_team_api_id) %>%
-  summarise(total_wins = n()) %>%
-  arrange(desc(total_wins)) %>%
+```{r}
+away_wins <- away_team %>% group_by(team_api_id) %>%
+  summarise(total_wins = sum(W)) %>%
+  arrange(desc(total_wins)) %>% 
   top_n(10) %>%
-  left_join(teams, by = c("away_team_api_id" = "team_api_id"))
+  left_join(teams, by = c('team_api_id')) %>%
+  mutate(labels = as.character(total_wins)) 
 
-print(away_wins);
+print(away_wins)
+
+####
+away_wins_season <- away_team %>% 
+  group_by(team_api_id,season, league_id) %>%
+  summarise(total_wins = sum(W)) %>% 
+  left_join(teams, by = c('team_api_id')) %>% 
+  merge(champion_season %>% transmute(season, league_id, champion = team_api_id), by = c('season','league_id')) %>%
+  mutate(champion = team_api_id == champion)
+
+orden = away_wins %>% arrange(total_wins)  
+
+gga <- ggplot(away_wins, aes(x = total_wins, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_wins), hjust = 1, nudge_x = -0.5, color = 'white') +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab('Partidos ganados como local') +
+  ylab('Equipo') 
+  
+ggb <- ggplot(away_wins_season, aes(group = season, fill = champion)) +
+  geom_col(aes(total_wins, team_long_name)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = 'free') +
+  xlab('Partidos ganados como visitantes') +
+  ylab('Equipo') + 
+  theme(text=element_text(size=7)) +
+  labs(fill = "Campeón")
+
+print(gga)
+print(ggb)
+
+```
 
 # Hallazgo 3: El jugador con la puntuación más alta
-
+```{r}
 highest_rating <- player_attributes %>%
   filter(overall_rating == max(overall_rating, na.rm = TRUE)) %>%
   left_join(players, by = c("player_api_id" = "player_api_id"))
 
-print(highest_rating);
+print(highest_rating)
+
+```
 
 # Hallazgo 4: El jugador con la puntuación más baja
+```{r}
 lowest_rating <- player_attributes %>%
   filter(overall_rating == min(overall_rating, na.rm = TRUE)) %>%
+  top_n(1) %>%
   left_join(players, by = c("player_api_id" = "player_api_id"))
 
-print(lowest_rating);
+print(lowest_rating)
+
+
+```
 
 # Hallazgo 5: El equipo con mayor diferencia de goles a favor en casa:
+```{r}
+local_goal_diff <- local_team %>% group_by(team_api_id) %>%
+  summarise(total_goal_diff = sum(GF-GA)) %>%
+  arrange(desc(total_goal_diff)) %>% 
+  top_n(10) %>%
+  left_join(teams, by = c('team_api_id')) %>%
+  mutate(labels = as.character(total_goal_diff)) 
 
-home_goal_diff <- matches %>%
-  group_by(home_team_api_id) %>%
-  summarise(total_goal_diff = sum(home_team_goal - away_team_goal)) %>%
-  arrange(desc(total_goal_diff)) %>%
-  top_n(1) %>%
-  left_join(teams, by = c("home_team_api_id" = "team_api_id"))
+print(local_goal_diff)
 
-print(home_goal_diff);
+####
+local_goal_diff_season <- local_team %>% 
+  group_by(team_api_id,season, league_id) %>%
+  summarise(total_goal_diff = sum(GF-GA)) %>% 
+  left_join(teams, by = c('team_api_id')) %>% 
+  merge(champion_season %>% transmute(season, league_id, champion = team_api_id), by = c('season','league_id')) %>%
+  mutate(champion = team_api_id == champion)
 
-# Hallazgo 6: El equipo con mayor diferencia de goels en contra como visitante:
+orden <- local_goal_diff %>% arrange(total_goal_diff)  
 
+gga <- ggplot(local_goal_diff, aes(x = total_goal_diff, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_goal_diff), hjust = 1, nudge_x = -0.5, color = 'white') +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab('Partidos ganados como local') +
+  ylab('Equipo') 
+  
+ggb <- ggplot(local_goal_diff_season, aes(group = season)) +
+  geom_col(aes(total_goal_diff, team_long_name,  fill = champion)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = 'free') +
+  xlab('Diferencia de goles como local') +
+  ylab('Equipo') + 
+  theme(text=element_text(size=7)) +
+  labs(fill = "Campeón de Liga")
+
+print(gga)
+print(ggb)
+
+###
+
+```
+
+# Hallazgo 6: El equipo con mayor diferencia de goles en contra como visitante:
+```{r}
 away_goal_diff <- matches %>%
   group_by(away_team_api_id) %>%
   summarise(total_goal_diff = sum(away_team_goal - home_team_goal)) %>%
@@ -146,22 +353,75 @@ away_goal_diff <- matches %>%
   top_n(1) %>%
   left_join(teams, by = c("away_team_api_id" = "team_api_id"))
 
+print(away_goal_diff)
+
+
+away_goal_diff <- away_team %>% group_by(team_api_id) %>%
+  summarise(total_goal_diff = sum(GF-GA)) %>%
+  arrange(desc(total_goal_diff)) %>% 
+  top_n(10) %>%
+  left_join(teams, by = c('team_api_id')) %>%
+  mutate(labels = as.character(total_goal_diff)) 
+
+print(local_goal_diff)
+
+####
+away_goal_diff_season <- away_team %>% 
+  group_by(team_api_id,season, league_id) %>%
+  summarise(total_goal_diff = sum(GF-GA)) %>% 
+  left_join(teams, by = c('team_api_id')) %>% 
+  merge(champion_season %>% transmute(season, league_id, champion = team_api_id), by = c('season','league_id')) %>%
+  mutate(champion = team_api_id == champion)
+
+orden <- away_goal_diff %>% arrange(total_goal_diff)  
+
+gga <- ggplot(away_goal_diff, aes(x = total_goal_diff, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_goal_diff), hjust = 1, nudge_x = -0.5, color = 'white') +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab('Partidos ganados como local') +
+  ylab('Equipo') 
+  
+ggb <- ggplot(away_goal_diff_season, aes(group = season)) +
+  geom_col(aes(total_goal_diff, team_long_name,  fill = champion)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = 'free') +
+  xlab('Diferencia de goles por partido como visitante') +
+  ylab('Equipo') + 
+  theme(text=element_text(size=7)) +
+  labs(fill = "Campeón de Liga")
+
+print(gga)
+print(ggb)
+
+
+
+```
+
+
+
 # Muestra los resultados
-print(away_goal_diff);
+```{r}
+print(away_goal_diff)
+```
 
-# Hallazgo 7: El equipo con la mayor cantidad de partidos en la base de datos:
 
-team_matches <- matches %>%
-  group_by(home_team_api_id) %>%
-  summarise(total_matches = n()) %>%
-  arrange(desc(total_matches)) %>%
-  top_n(1) %>%
-  left_join(teams, by = c("home_team_api_id" = "team_api_id"))
 
-print(team_matches);
+# Hallazgo 7: El equipo que mas veces ha sido campeon
+```{r}
+winners <- champion_season %>% 
+  group_by(team_long_name) %>% 
+  summarise(copas = n()) %>%
+  arrange(desc(copas)) %>% 
+  top_n(10)
+
+# Muestra los resultados
+winners
+
+```
 
 # Hallazgo 8: El equipo con la menor cantidad de derrotas como visitante:
-
+```{r}
 away_losses <- matches %>%
   filter(away_team_goal > home_team_goal) %>%
   group_by(away_team_api_id) %>%
@@ -170,39 +430,94 @@ away_losses <- matches %>%
   top_n(1) %>%
   left_join(teams, by = c("away_team_api_id" = "team_api_id"))
 
-print(away_losses);
+print(away_losses)
+
+
+
+
+away_losses <- away_team %>% group_by(team_api_id) %>%
+  summarise(total_losses = sum(L)) %>%
+  arrange(total_losses) %>% 
+  top_n(10) %>%
+  left_join(teams, by = c('team_api_id')) %>%
+  mutate(labels = as.character(total_losses)) 
+
+print(away_losses)
+
+####
+away_losses_season <- away_team %>% 
+  group_by(team_api_id,season, league_id) %>%
+  summarise(total_losses = sum(L)) %>% 
+  left_join(teams, by = c('team_api_id')) %>% 
+  merge(champion_season %>% transmute(season, league_id, champion = team_api_id), by = c('season','league_id')) %>%
+  mutate(champion = team_api_id == champion)
+
+orden <- away_losses %>% arrange(desc(total_losses))
+
+gga <- ggplot(away_losses, aes(x = total_losses, y = team_long_name)) +
+  geom_col() +
+  geom_text(aes(label = total_losses), hjust = 1, nudge_x = -0.5, color = 'white') +
+  scale_y_discrete(limits = orden$team_long_name) +
+  xlab('Partidos ganados como local') +
+  ylab('Equipo') 
+  
+ggb <- ggplot(away_losses_season, aes(group = season)) +
+  geom_col(aes(total_losses, team_long_name,  fill = champion)) +
+  scale_y_discrete(limits = orden$team_long_name) +
+  facet_wrap(~season, scales = 'free') +
+  xlab('Partidos con derrota como visitante') +
+  ylab('Equipo') + 
+  theme(text=element_text(size=7)) +
+  labs(fill = "Campeón de Liga")
+
+print(gga)
+print(ggb)
+
+
+```
 
 # Hallazgo 9: Los 10 jugadores con la mayor cantidad de goles marcados en la temporada:
+```{r}
+player_goals <- goals %>%
+  select(match_api_id, player1_id, player2_id, goals) %>%
+  mutate(player_id = if_else(is.na(player1_id), player2_id, player1_id)) %>%
+  group_by(match_api_id, player_id) %>%
+  summarise(total_goals = sum(goals, na.rm = TRUE)) %>%
+  ungroup()
 
-player_goals <- matches %>%
-  select(home_player_1:away_player_11) %>%
-  gather(player, player_api_id) %>%
-  left_join(players, by = c("player_api_id" = "player_api_id")) %>%
-  group_by(player_name) %>%
-  summarise(total_goals = sum(!is.na(player))) %>%
+player_names <- players %>%
+  select(player_api_id, player_name)
+
+player_season_goals <- player_goals %>%
+  inner_join(player_names, by = c("player_id" = "player_api_id")) %>%
+  left_join(matches, by = c("match_api_id" = "match_api_id")) %>%
+  mutate(season = season) %>%
+  group_by(player_name, season) %>%
+  summarise(total_goals = sum(total_goals)) %>%
+  ungroup()
+
+# Obtener el top 10 de goleadores por temporada
+top_10_scorers <- player_season_goals %>%
   arrange(desc(total_goals)) %>%
+  group_by(season) %>%
   top_n(10)
 
-print(player_goals);
+print(top_10_scorers)
 
-# Hallazgo 10: Los 10 equipos con la mayor cantidad de partidos jugados en la temporada:
-
-team_matches_played <- matches %>%
-  group_by(home_team_api_id) %>%
-  summarise(total_matches = n()) %>%
-  bind_rows(matches %>%
-              group_by(away_team_api_id) %>%
-              summarise(total_matches = n())) %>%
-  group_by(home_team_api_id) %>%
-  summarise(total_matches = sum(total_matches)) %>%
-  arrange(desc(total_matches)) %>%
-  top_n(10) %>%
-  left_join(teams, by = c("home_team_api_id" = "team_api_id"))
-
-print(team_matches_played);
+```
 
 
 
+# Hallazgo 10: El jugador con la mayor diferencia entre su valoración máxima y mínima a lo largo de su carrera
+```{r}
+player_rating_difference <- player_attributes %>%
+  group_by(player_api_id) %>%
+  summarise(rating_difference = max(overall_rating, na.rm = TRUE) - min(overall_rating, na.rm = TRUE)) %>%
+  arrange(desc(rating_difference)) %>%
+  top_n(5) %>%
+  left_join(players, by = "player_api_id")
 
+# Muestra los resultados
+player_rating_difference
 
-
+```
